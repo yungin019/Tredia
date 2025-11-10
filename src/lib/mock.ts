@@ -1,9 +1,34 @@
-import { MockData } from "./types";
+import { MockData, FeedPost } from "./types";
 
-export const mockFeedData: MockData[] = [
-  { id: 1, title: "Stock A", value: 150.25, change: 2.5 },
-  { id: 2, title: "Stock B", value: 75.5, change: -1.2 },
-  { id: 3, title: "Stock C", value: 200.0, change: 5.0 },
+export const mockFeedData: FeedPost[] = [
+  {
+    id: 1,
+    title: "Recession Fears Ease",
+    subtitle: "Economic indicators show surprising strength.",
+    sentiment: "Bullish",
+    tickers: ["$SPY", "$DJI"],
+  },
+  {
+    id: 2,
+    title: "Tech Stocks Rally",
+    subtitle: "AI and cloud growth continue to drive the sector.",
+    sentiment: "Bullish",
+    tickers: ["$AAPL", "$GOOGL", "$MSFT"],
+  },
+  {
+    id: 3,
+    title: "Inflation Remains a Concern",
+    subtitle: "The Fed is expected to raise rates again.",
+    sentiment: "Bearish",
+    tickers: ["$USD", "$GOLD"],
+  },
+  {
+    id: 4,
+    title: "Oil Prices Stabilize",
+    subtitle: "OPEC+ production cuts have had a limited impact.",
+    sentiment: "Neutral",
+    tickers: ["$WTI", "$BRENT"],
+  },
 ];
 
 export const mockTrendsData: MockData[] = [
