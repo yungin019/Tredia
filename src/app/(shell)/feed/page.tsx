@@ -1,22 +1,24 @@
-import { SimulateTradeModal } from "@/components/SimulateTradeModal";
-import { mockFeedData } from "@/lib/mock";
 
-export default function FeedPage() {
+import React from "react";
+import { mockArticles } from "@/lib/mock";
+import FeedCard from "@/components/feed/FeedCard";
+
+const FeedPage = () => {
   return (
-    <div className="p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Feed</h1>
-        <SimulateTradeModal />
-      </div>
-      <div className="space-y-4">
-        {mockFeedData.map((item) => (
-          <div key={item.id} className="p-4 rounded-lg border">
-            <h2 className="font-bold">{item.title}</h2>
-            <p>Value: {item.value}</p>
-            <p>Change: {item.change}</p>
-          </div>
+    <div className="container mx-auto p-4">
+      <h1 className="text-3xl font-bold text-center my-8 text-white">
+        AI Market Feed
+      </h1>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {mockArticles.map((article) => (
+          <FeedCard key={article.id} article={article} />
         ))}
       </div>
+      <footer className="text-center text-xs text-gray-400 mt-8">
+        <p>Informational & educational purposes only — not financial advice.</p>
+      </footer>
     </div>
   );
-}
+};
+
+export default FeedPage;
