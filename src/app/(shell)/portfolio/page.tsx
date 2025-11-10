@@ -1,18 +1,38 @@
-import { mockPortfolioData } from "@/lib/mock";
+import NeonLineChart from "@/components/charts/NeonLineChart";
+import KpiStat from "@/components/charts/KpiStat";
+import PageTransition from "@/components/PageTransition";
 
 export default function PortfolioPage() {
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold">Portfolio</h1>
-      <div className="space-y-4 mt-4">
-        {mockPortfolioData.map((item) => (
-          <div key={item.id} className="p-4 rounded-lg border">
-            <h2 className="font-bold">{item.title}</h2>
-            <p>Value: ${item.value}</p>
-            <p>Change: ${item.change}</p>
-          </div>
-        ))}
+    <PageTransition>
+      <div className="container mx-auto max-w-7xl px-6 py-8">
+        <h1 className="text-3xl font-bold text-white mb-6 tracking-tighter">
+          Portfolio
+        </h1>
+        <div className="glass p-6 mb-8">
+          <NeonLineChart />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <KpiStat
+            title="Total Value"
+            value="$12,345.67"
+            delta="+12.3%"
+            deltaType="profit"
+          />
+          <KpiStat
+            title="24h Change"
+            value="-$234.56"
+            delta="-1.9%"
+            deltaType="loss"
+          />
+          <KpiStat
+            title="Top Performer"
+            value="Solana"
+            delta="+5.8%"
+            deltaType="profit"
+          />
+        </div>
       </div>
-    </div>
+    </PageTransition>
   );
 }
