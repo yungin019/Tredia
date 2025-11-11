@@ -4,11 +4,12 @@ import PageTransition from "@/components/PageTransition";
 
 export default function PortfolioPage() {
   return (
-    <PageTransition>
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <h1 className="text-2xl font-bold text-white mb-8 tracking-tighter">
+    <div className="max-w-7xl mx-auto px-6">
+      <PageTransition>
+        <h1 className="text-2xl font-bold text-white mb-8 tracking-headings">
           Portfolio Overview
         </h1>
+      </PageTransition>
         <div className="glass p-6 mb-6">
           <NeonLineChart />
         </div>
@@ -38,7 +39,6 @@ export default function PortfolioPage() {
             />
           </div>
         </div>
-      </div>
-    </PageTransition>
+    </div>
   );
 }

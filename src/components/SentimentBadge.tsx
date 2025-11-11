@@ -2,16 +2,16 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const sentimentBadgeVariants = cva(
-  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold transition-colors uppercase tracking-wider",
   {
     variants: {
       sentiment: {
         bullish:
-          "border-transparent bg-brand-profit/20 text-brand-profit shadow-neonSm",
+          "border-brand-profit/60 bg-transparent text-brand-profit [text-shadow:0_0_8px_theme(colors.brand.profit)]",
         bearish:
-          "border-transparent bg-brand-loss/20 text-brand-loss shadow-neonSm",
+          "border-brand-loss/60 bg-transparent text-brand-loss [text-shadow:0_0_8px_theme(colors.brand.loss)]",
         neutral:
-          "border-transparent bg-brand-gold/20 text-brand-gold shadow-neonSm",
+          "border-brand-gold/60 bg-transparent text-brand-gold [text-shadow:0_0_8px_theme(colors.brand.gold)]",
       },
     },
   }
