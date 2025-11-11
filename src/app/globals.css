@@ -19,11 +19,6 @@ body {
   transform: translateZ(0);
 }
 
-.glass:hover {
-  box-shadow: 0 0 24px -4px rgba(0, 184, 255, 0.45);
-  transform: scale(1.02);
-}
-
 @media (max-width: 640px) {
   .container {
     padding-left: 1rem;

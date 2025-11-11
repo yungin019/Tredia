@@ -16,21 +16,21 @@ export default function BottomNav() {
   ];
 
   return (
-    <footer className="fixed bottom-4 left-4 right-4 h-16 glass flex items-center justify-around z-50 rounded-full">
+    <footer className="fixed bottom-0 left-0 right-0 h-20 glass flex items-center justify-around z-50 border-t border-white/10">
       {navItems.map((item) => (
         <a
           key={item.href}
           href={item.href}
           className={cn(
-            "flex flex-col items-center text-xs text-white/70 hover:text-brand-cyan transition-colors relative",
+            "flex flex-col items-center w-16 text-xs text-white/60 hover:text-brand-cyan transition-colors relative pt-1",
             pathname === item.href && "text-brand-cyan"
           )}
         >
-          <item.icon size={24} className="mb-1" />
-          <span>{item.label}</span>
+          <item.icon size={22} className="mb-1" />
+          <span className="tracking-wide">{item.label}</span>
           {pathname === item.href && (
             <motion.div
-              className="absolute -bottom-1 h-0.5 w-6 bg-brand-cyan rounded-full"
+              className="absolute top-0 h-1 w-12 bg-brand-cyan rounded-full shadow-neonSm"
               layoutId="underline"
             />
           )}

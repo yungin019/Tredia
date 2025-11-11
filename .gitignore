@@ -42,3 +42,7 @@ next-env.d.ts
 
 # logs
 dev_server.log
+
+# verification artifacts
+*.py
+*.png

@@ -24,11 +24,12 @@ const config: Config = {
         card: "1rem",
       },
       boxShadow: {
-        neon: "0 0 20px -6px rgba(0,184,255,0.35)",
-        neonSm: "0 0 12px -6px rgba(0,184,255,0.25)",
+        glass: "0 0 20px -6px rgba(0,184,255,0.25)",
+        neon: "0 0 24px -4px rgba(0,184,255,0.45)",
+        neonSm: "0 0 12px -4px rgba(0,184,255,0.35)",
       },
       letterSpacing: {
-        tighter: "-0.01em",
+        tighter: "-0.02em",
         wider: "0.01em",
       },
       fontWeight: {

@@ -19,6 +19,18 @@ const defaultData = [
   { name: "Jun", value: 700 },
 ];
 
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="glass p-3 text-xs">
+        <p className="font-bold text-white">{label}</p>
+        <p style={{ color: neon.cyan }}>Value: {payload[0].value.toFixed(2)}</p>
+      </div>
+    );
+  }
+  return null;
+};
+
 const NeonLineChart = ({ data = defaultData }) => {
   return (
     <ResponsiveContainer width="100%" height={300}>
@@ -34,12 +46,7 @@ const NeonLineChart = ({ data = defaultData }) => {
         </defs>
         <XAxis dataKey="name" stroke={neon.axis} />
         <YAxis stroke={neon.axis} />
-        <Tooltip
-          contentStyle={{
-            backgroundColor: "rgba(0, 0, 0, 0.8)",
-            borderColor: neon.grid,
-          }}
-        />
+        <Tooltip content={<CustomTooltip />} />
         <Area
           type="monotone"
           dataKey="value"

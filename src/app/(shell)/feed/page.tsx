@@ -6,14 +6,14 @@ import PageTransition from "@/components/PageTransition";
 export default function FeedPage() {
   return (
     <PageTransition>
-      <div className="container mx-auto max-w-7xl px-6 py-8">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-white tracking-tighter">
-            Feed
+      <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-2xl font-bold text-white tracking-tighter">
+            Market Feed
           </h1>
           <SimulateTradeModal />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {mockFeedData.map((item) => (
             <KpiStat
               key={item.id}

@@ -1,5 +1,6 @@
 import { AlertsCenter } from "@/components/AlertsCenter";
 import BottomNav from "@/components/BottomNav";
+import { Bot } from "lucide-react";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "../globals.css";
@@ -19,11 +20,16 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <header className="fixed top-0 left-0 right-0 h-16 bg-transparent backdrop-blur-xl flex items-center justify-between px-4 z-50 border-b border-white/10">
-          <h1 className="text-2xl font-bold text-white">Tredia</h1>
+        <header className="fixed top-0 left-0 right-0 h-16 bg-transparent backdrop-blur-xl flex items-center justify-between px-6 z-50 border-b border-white/10">
+          <div className="flex items-center gap-3">
+            <Bot size={28} className="text-brand-cyan" />
+            <h1 className="text-xl font-bold text-white tracking-tighter">
+              Tredia
+            </h1>
+          </div>
           <AlertsCenter />
         </header>
-        <main className="pt-20 pb-20">{children}</main>
+        <main className="pt-24 pb-24">{children}</main>
         <BottomNav />
       </body>
     </html>

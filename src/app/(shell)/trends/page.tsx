@@ -5,11 +5,11 @@ import PageTransition from "@/components/PageTransition";
 export default function TrendsPage() {
   return (
     <PageTransition>
-      <div className="container mx-auto max-w-7xl px-6 py-8">
-        <h1 className="text-3xl font-bold text-white mb-6 tracking-tighter">
-          Trends
+      <div className="max-w-7xl mx-auto px-6 py-4">
+        <h1 className="text-2xl font-bold text-white mb-8 tracking-tighter">
+          Market Trends
         </h1>
-        <div className="glass p-6 mb-8">
+        <div className="glass p-6 mb-6">
           <NeonLineChart />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
