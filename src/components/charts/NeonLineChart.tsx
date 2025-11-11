@@ -19,7 +19,15 @@ const defaultData = [
   { name: "Jun", value: 700 },
 ];
 
-const CustomTooltip = ({ active, payload, label }) => {
+const CustomTooltip = ({
+  active,
+  payload,
+  label,
+}: {
+  active?: any;
+  payload?: any;
+  label?: any;
+}) => {
   if (active && payload && payload.length) {
     return (
       <div className="glass p-3 text-xs">
