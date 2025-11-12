@@ -20,7 +20,7 @@ interface NeonButtonProps {
 const NeonButton: React.FC<NeonButtonProps> = ({
   children,
   onPress,
-  className = "bg-electricBlue",
+  className = "bg-[#00B8FF]",
 }) => {
   const scale = useSharedValue(1);
 

@@ -13,7 +13,7 @@ interface GlassPanelProps {
 const GlassPanel: React.FC<GlassPanelProps> = ({ children, className }) => {
   return (
     <StyledView
-      className={`bg-cardBg border border-border rounded-card ${className}`}
+      className={`bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.10)] rounded-lg ${className}`}
     >
       {children}
     </StyledView>

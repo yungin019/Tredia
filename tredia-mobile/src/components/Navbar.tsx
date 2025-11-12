@@ -3,14 +3,13 @@ import React from "react";
 import { Pressable, Text } from "react-native";
 import { styled } from "nativewind";
 import { MaterialIcons } from "@expo/vector-icons";
-import GlassPanel from "./GlassPanel";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 
 const StyledPressable = styled(Pressable);
 
 const Navbar: React.FC<BottomTabBarProps> = ({ state, descriptors, navigation }) => {
   return (
-    <GlassPanel className="flex-row justify-around items-center absolute bottom-0 left-0 right-0 mx-4 mb-4 p-2 rounded-full">
+    <StyledPressable className="flex-row justify-around items-center absolute bottom-0 left-0 right-0 mx-4 mb-4 p-2 rounded-full bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.10)]">
       {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
         const label =
@@ -41,9 +40,7 @@ const Navbar: React.FC<BottomTabBarProps> = ({ state, descriptors, navigation })
             ? "show-chart"
             : label === "Portfolio"
             ? "account-balance-wallet"
-            : label === "Assistant"
-            ? "smart-toy"
-            : "settings";
+            : "smart-toy";
 
         return (
           <StyledPressable
@@ -54,11 +51,11 @@ const Navbar: React.FC<BottomTabBarProps> = ({ state, descriptors, navigation })
             <MaterialIcons
               name={iconName}
               size={24}
-              color={isFocused ? "#00FFFF" : "gray"}
+              color={isFocused ? "#00B8FF" : "gray"}
             />
             <Text
               style={{
-                color: isFocused ? "#00FFFF" : "gray",
+                color: isFocused ? "#00B8FF" : "gray",
                 fontSize: 10,
               }}
             >
@@ -67,7 +64,7 @@ const Navbar: React.FC<BottomTabBarProps> = ({ state, descriptors, navigation })
           </StyledPressable>
         );
       })}
-    </GlassPanel>
+    </StyledPressable>
   );
 };
 
