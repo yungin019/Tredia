@@ -1,0 +1,49 @@
+{
+  "name": "tredia-mobile",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "scripts": {
+    "start": "expo start",
+    "dev": "expo start --tunnel",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "web": "expo start --web",
+    "build:preview:ios": "eas build -p ios --profile preview",
+    "build:preview:android": "eas build -p android --profile preview",
+    "update:preview": "eas update --branch preview --message 'preview'"
+  },
+  "dependencies": {
+    "@expo/vector-icons": "^15.0.3",
+    "@react-native-masked-view/masked-view": "^0.3.2",
+    "@react-navigation/bottom-tabs": "^7.8.4",
+    "@react-navigation/native": "^7.1.19",
+    "@react-navigation/stack": "^7.6.3",
+    "@tanstack/react-query": "^5.90.7",
+    "expo": "~54.0.23",
+    "expo-linear-gradient": "^15.0.7",
+    "expo-status-bar": "~3.0.8",
+    "moti": "^0.30.0",
+    "nativewind": "^4.2.1",
+    "react": "19.1.0",
+    "react-native": "0.81.5",
+    "react-native-mmkv": "^4.0.0",
+    "react-native-reanimated": "^4.1.5",
+    "react-native-safe-area-context": "^5.6.2",
+    "react-native-screens": "^4.18.0",
+    "react-native-svg": "^15.14.0",
+    "victory-native": "^41.20.2"
+  },
+  "devDependencies": {
+    "@types/react": "~19.1.0",
+    "@typescript-eslint/eslint-plugin": "^8.46.4",
+    "@typescript-eslint/parser": "^8.46.4",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-native": "^5.0.0",
+    "tailwindcss": "^3.4.18",
+    "typescript": "~5.9.2",
+    "typescript-eslint": "^8.46.4"
+  },
+  "private": true
+}
