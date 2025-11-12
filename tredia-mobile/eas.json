@@ -1,11 +1,29 @@
 {
+  "cli": {
+    "version": ">= 7.2.0"
+  },
   "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal"
+    },
+    "production": {
+      "distribution": "store"
+    }
+  },
+  "submit": {
     "production": {
       "ios": {
-        "bundleIdentifier": "com.tredia.app"
+        "appleId": "your-apple-id@example.com",
+        "ascAppId": "your-asc-app-id",
+        "appleTeamId": "your-apple-team-id"
       },
       "android": {
-        "applicationId": "com.tredia.app"
+        "serviceAccountKeyPath": "./google-service-account.json",
+        "track": "internal"
       }
     }
   }
