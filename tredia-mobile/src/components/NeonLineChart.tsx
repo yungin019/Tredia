@@ -10,7 +10,7 @@ const StyledText = styled(Text);
 const NeonLineChart = () => {
   return (
     <GlassPanel className="h-48 justify-center items-center">
-      <StyledText className="text-white">NeonLineChart Placeholder</StyledText>
+      <StyledText className="text-white">Chart Placeholder</StyledText>
     </GlassPanel>
   );
 };
