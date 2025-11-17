@@ -16,13 +16,13 @@ const KpiStat = ({
   sentiment?: SentimentBadgeProps["sentiment"];
 }) => {
   return (
-    <div className="glass px-6 py-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <p className="text-sm text-white/60 font-medium tracking-wider uppercase">
+    <div className="glass px-6 py-4 flex flex-col gap-2">
+      <div className="flex justify-between items-start">
+        <div className="flex flex-col">
+          <p className="text-sm text-white/[0.65] font-medium tracking-wider uppercase">
             {title}
           </p>
-          <p className="text-2xl font-bold text-white tracking-tighter">
+          <p className="text-3xl font-bold text-white tracking-tighter">
             {value}
           </p>
         </div>
@@ -31,12 +31,14 @@ const KpiStat = ({
             {sentiment.charAt(0).toUpperCase() + sentiment.slice(1)}
           </SentimentBadge>
         ) : (
-          <MiniSparkline />
+          <div className="mt-2">
+            <MiniSparkline />
+          </div>
         )}
       </div>
       <p
         className={cn(
-          "text-sm",
+          "text-sm font-semibold",
           deltaType === "profit" ? "text-brand-profit" : "text-brand-loss"
         )}
       >

@@ -9,19 +9,14 @@ body {
 }
 
 .glass {
-  -webkit-backdrop-filter: blur(24px);
-  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 1rem;
   box-shadow: 0 0 20px -6px rgba(0, 184, 255, 0.25);
   transition: all 0.25s ease;
   transform: translateZ(0);
-}
-
-.glass:hover {
-  box-shadow: 0 0 24px -4px rgba(0, 184, 255, 0.45);
-  transform: scale(1.02);
 }
 
 @media (max-width: 640px) {
