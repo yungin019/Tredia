@@ -1,67 +1,81 @@
 // src/design/trediaTheme.ts
 
-export const trediaTheme = {
-  colors: {
-    accentCyan: "#00FFFF",
-    accentAqua: "#40E0D0",
-    electricBlue: "#007BFF",
-    gold: "#FFD700",
-    profit: "#0BDA5B", // From various green-glow styles
-    loss: "#E35068",   // From various red-glow styles
-    cardBg: "rgba(255, 255, 255, 0.05)",
-    border: "rgba(255, 255, 255, 0.1)",
-    text: "#F5F5F5",
-    // Gradients will be handled in components/Tailwind config
-  },
-  radius: {
-    card: "1rem",      // 16px
-    modal: "1rem",     // 16px
-    button: "0.5rem",  // 8px
-    input: "0.5rem",   // 8px
-  },
-  shadows: {
-    neon: "0 0 20px rgba(0, 184, 255, 0.35)",
-    neonSm: "0 0 12px rgba(0, 184, 255, 0.25)",
-  },
-  spacing: {
-    cardHorizontal: 24, // px-6
-    cardVertical: 16,     // py-4
-    gridGap: 24,          // gap-6
-  },
-  typography: {
-    // These will map to font-inter-400, font-inter-500 etc. in Tailwind
-    // Letter spacing will be applied via utility classes
-  },
-  charts: {
-    axis: "rgba(255, 255, 255, 0.65)",
-    grid: "rgba(255, 255, 255, 0.12)",
-    line: "#007BFF", // electricBlue
-    strokeWidth: 2.5,
-    areaOpacity: 0.15,
-  },
+export type ThemeMode = "light" | "dark";
+
+export interface TrediaTheme {
+  // Core surfaces
+  background: string;
+  surface: string;
+  surfaceAlt: string;
+  card: string;
+
+  // Borders
+  border: string;
+  cardBorder: string;
+
+  // Text
+  textPrimary: string;
+  textSecondary: string;
+  textSoft: string;
+  textMuted: string;
+
+  // Accent & status colors
+  accent: string;
+  accentSoft: string;
+  success: string;
+  danger: string;
+  warning: string;
+}
+
+// 🌙 Dark mode — navy / neon vibe
+export const darkTheme: TrediaTheme = {
+  background: "#020617", // slate-950
+  surface: "#02081B",
+  surfaceAlt: "#020B24",
+  card: "#02081B",
+
+  border: "#111827",
+  cardBorder: "#111827",
+
+  textPrimary: "#E5E7EB",
+  textSecondary: "#9CA3AF",
+  textSoft: "#9CA3AF",
+  textMuted: "#6B7280",
+
+  accent: "#38BDF8", // neon-ish blue
+  accentSoft: "rgba(56, 189, 248, 0.18)",
+
+  success: "#22C55E",
+  danger: "#EF4444",
+  warning: "#EAB308",
 };
 
-// This is a helper for extending the tailwind.config.js
-export const tailwindThemeExtension = {
-  colors: {
-    ...trediaTheme.colors,
-  },
-  borderRadius: {
-    card: trediaTheme.radius.card,
-    modal: trediaTheme.radius.modal,
-    btn: trediaTheme.radius.button,
-    input: trediaTheme.radius.input,
-  },
-  boxShadow: {
-    neon: trediaTheme.shadows.neon,
-    "neon-sm": trediaTheme.shadows.neonSm,
-  },
-  spacing: {
-    "card-h": `${trediaTheme.spacing.cardHorizontal}px`,
-    "card-v": `${trediaTheme.spacing.cardVertical}px`,
-    "grid-gap": `${trediaTheme.spacing.gridGap}px`,
-  },
-  fontFamily: {
-    inter: ["Inter", "sans-serif"],
-  },
+// ☀️ Light mode — clean but still Tredia
+export const lightTheme: TrediaTheme = {
+  background: "#F9FAFB",
+  surface: "#FFFFFF",
+  surfaceAlt: "#F3F4F6",
+  card: "#FFFFFF",
+
+  border: "#E5E7EB",
+  cardBorder: "#E5E7EB",
+
+  textPrimary: "#020617",
+  textSecondary: "#4B5563",
+  textSoft: "#6B7280",
+  textMuted: "#9CA3AF",
+
+  accent: "#2563EB",
+  accentSoft: "rgba(37, 99, 235, 0.12)",
+
+  success: "#16A34A",
+  danger: "#DC2626",
+  warning: "#D97706",
 };
+
+export const getThemeForMode = (mode: ThemeMode): TrediaTheme =>
+  mode === "light" ? lightTheme : darkTheme;
+
+// ✅ Default export used by src/theme/theme.ts
+const trediaTheme: TrediaTheme = darkTheme;
+export default trediaTheme;
