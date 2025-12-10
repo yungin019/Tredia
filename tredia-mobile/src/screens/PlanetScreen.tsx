@@ -47,7 +47,7 @@ const PlanetScreen: React.FC = () => {
   const [dashboard, setDashboard] = useState<any | null>(null);
   const [category, setCategory] = useState<CategoryKey>("all");
 
-  // ------------- LOAD REAL SUPER AI DASHBOARD -------------
+  // ------------- LOAD REAL AI DASHBOARD -------------
   const load = useCallback(async () => {
     try {
       setError(null);
@@ -79,43 +79,49 @@ const PlanetScreen: React.FC = () => {
   };
 
   // ------------- SAFE EXTRACTED FIELDS -------------
-  const rawSummary = dashboard?.summary ?? null;
 
   // summary can be:
-  // - string (legacy)
-  // - { title, text } (new AiDashboardPayload)
-  // We normalize everything into a single summaryText string.
-  let summaryText: string | undefined;
+  // - string
+  // - { title, text }
+  // - null / undefined
+  const rawSummary = dashboard?.summary ?? null;
+  let summaryText: string | null = null;
+
   if (typeof rawSummary === "string") {
     summaryText = rawSummary;
   } else if (rawSummary && typeof rawSummary === "object") {
-    const maybeTitle =
+    const title =
       typeof (rawSummary as any).title === "string"
         ? (rawSummary as any).title
         : "";
-    const maybeText =
+    const text =
       typeof (rawSummary as any).text === "string"
         ? (rawSummary as any).text
         : "";
-
-    if (maybeTitle && maybeText) {
-      summaryText = `${maybeTitle} — ${maybeText}`;
-    } else {
-      summaryText = maybeTitle || maybeText || undefined;
-    }
-  } else {
-    summaryText = undefined;
+    summaryText = text || title || null;
   }
 
+  // Optional market mood (old Super AI payload). If not present, we just show defaults.
   const marketMood = dashboard?.marketMood ?? null;
   const moodLabel = marketMood?.label ?? "Neutral";
   const hotFocus = marketMood?.hotFocus ?? "BTC • ETH • Tech";
   const nextScan = marketMood?.nextScanText ?? "Every few minutes";
 
-  const trending: DashboardAsset[] = dashboard?.trending ?? [];
-  const heatmap: DashboardAsset[] = dashboard?.heatmap ?? [];
+  // New AI dashboard always has `markets` with movers/trending.
+  const markets = dashboard?.markets ?? null;
+
+  const trending: DashboardAsset[] =
+    dashboard?.trending ??
+    markets?.trending ??
+    [];
+
+  const heatmapSource: DashboardAsset[] =
+    dashboard?.heatmap ??
+    markets?.movers ??
+    [];
 
   // ------------- CATEGORY FILTERING -------------
+
   const categoryFilter = (a: DashboardAsset) => {
     if (category === "all") return true;
 
@@ -136,8 +142,8 @@ const PlanetScreen: React.FC = () => {
   );
 
   const filteredHeatmap = useMemo(
-    () => heatmap.filter(categoryFilter).slice(0, 12),
-    [heatmap, category]
+    () => heatmapSource.filter(categoryFilter).slice(0, 12),
+    [heatmapSource, category]
   );
 
   // ------------- NAV -------------
