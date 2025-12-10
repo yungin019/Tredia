@@ -7,6 +7,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../context/ThemeContext";
 
 import HomeScreen from "../screens/HomeScreen";
+import PlanetScreen from "../screens/PlanetScreen";
 import AssistantScreen from "../screens/AssistantScreen";
 import PortfolioScreen from "../screens/PortfolioScreen";
 import CommunityNavigator from "./CommunityNavigator";
@@ -54,7 +55,7 @@ const HomeTabsNavigator: React.FC = () => {
         }}
       />
 
-      {/* MARKETS */}
+      {/* MARKETS = dedicated navigator (heatmap / trends / AssetDetail) */}
       <Tab.Screen
         name="Markets"
         component={MarketsNavigator}
@@ -65,7 +66,7 @@ const HomeTabsNavigator: React.FC = () => {
         }}
       />
 
-      {/* PLANET / COMMUNITY */}
+      {/* PLANET = Community hub (feed, creators, leaderboard, rewards) */}
       <Tab.Screen
         name="Planet"
         component={CommunityNavigator}

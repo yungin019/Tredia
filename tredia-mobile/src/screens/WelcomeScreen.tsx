@@ -27,208 +27,248 @@ const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* TOP BRAND */}
-        <View style={styles.headerRow}>
-          <Text style={[styles.logo, { color: theme.colors.accent }]}>
-            TREDIA
-          </Text>
+        {/* TOP SECTION (brand + hero + explanation) */}
+        <View style={styles.topSection}>
+          {/* TOP BRAND */}
+          <View style={styles.headerRow}>
+            <Text style={[styles.logo, { color: theme.colors.accent }]}>
+              TREDIA
+            </Text>
 
+            <View
+              style={[
+                styles.badge,
+                {
+                  borderColor: theme.colors.cardBorder,
+                  backgroundColor: theme.colors.surface,
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.dot,
+                  { backgroundColor: theme.colors.accent },
+                ]}
+              />
+              <Text
+                style={[
+                  styles.badgeText,
+                  { color: theme.colors.textSoft },
+                ]}
+              >
+                AI market radar • Live
+              </Text>
+            </View>
+          </View>
+
+          {/* HERO CARD */}
           <View
             style={[
-              styles.badge,
+              styles.heroCard,
               {
-                borderColor: theme.colors.cardBorder,
                 backgroundColor: theme.colors.surface,
-              },
-            ]}
-          >
-            <View
-              style={[
-                styles.dot,
-                { backgroundColor: theme.colors.accent },
-              ]}
-            />
-            <Text
-              style={[
-                styles.badgeText,
-                { color: theme.colors.textSoft },
-              ]}
-            >
-              AI market radar • Live
-            </Text>
-          </View>
-        </View>
-
-        {/* HERO CARD */}
-        <View
-          style={[
-            styles.heroCard,
-            {
-              backgroundColor: theme.colors.surface,
-              borderColor: theme.colors.cardBorder,
-            },
-          ]}
-        >
-          <Text
-            style={[styles.heroTitle, { color: theme.colors.textPrimary }]}
-          >
-            Your AI market brain, always on.
-          </Text>
-
-          <Text
-            style={[styles.heroSubtitle, { color: theme.colors.textSoft }]}
-          >
-            Tredia combines multiple AIs — one for news, one for markets, one
-            for your profile, and one that explains everything in plain
-            language. It scans global events and momentum to spot what could
-            move next.
-          </Text>
-
-          <View style={styles.statsRow}>
-            <View
-              style={[
-                styles.statCard,
-                {
-                  backgroundColor: theme.colors.card,
-                  borderColor: theme.colors.cardBorder,
-                },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.statLabel,
-                  { color: theme.colors.textSoft },
-                ]}
-              >
-                S&amp;P 500 (example)
-              </Text>
-              <Text
-                style={[
-                  styles.statValue,
-                  { color: theme.colors.textPrimary },
-                ]}
-              >
-                +0.8%
-              </Text>
-              <Text
-                style={[
-                  styles.statChip,
-                  { color: theme.colors.accent },
-                ]}
-              >
-                Mild uptrend
-              </Text>
-            </View>
-
-            <View
-              style={[
-                styles.statCard,
-                {
-                  backgroundColor: theme.colors.card,
-                  borderColor: theme.colors.cardBorder,
-                },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.statLabel,
-                  { color: theme.colors.textSoft },
-                ]}
-              >
-                BTC / USDT (example)
-              </Text>
-              <Text
-                style={[
-                  styles.statValue,
-                  { color: theme.colors.textPrimary },
-                ]}
-              >
-                +2.3%
-              </Text>
-              <Text
-                style={[
-                  styles.statChip,
-                  { color: theme.colors.accent },
-                ]}
-              >
-                High momentum
-              </Text>
-            </View>
-          </View>
-
-          <Text
-            style={{
-              fontSize: 11,
-              marginBottom: 12,
-              color: theme.colors.textSoft,
-            }}
-          >
-            Real market data will appear here once you&apos;re signed in.
-          </Text>
-
-          <View
-            style={[
-              styles.aiPill,
-              {
                 borderColor: theme.colors.cardBorder,
-                backgroundColor: theme.colors.background,
               },
             ]}
           >
             <Text
+              style={[styles.heroTitle, { color: theme.colors.textPrimary }]}
+            >
+              Your AI market brain, always on.
+            </Text>
+
+            <Text
+              style={[styles.heroSubtitle, { color: theme.colors.textSoft }]}
+            >
+              Tredia combines multiple AIs — one for news, one for markets, one
+              for your profile, and one that explains everything in plain
+              language. It scans global events and momentum to spot what could
+              move next.
+            </Text>
+
+            <View style={styles.statsRow}>
+              <View
+                style={[
+                  styles.statCard,
+                  {
+                    backgroundColor: theme.colors.card,
+                    borderColor: theme.colors.cardBorder,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.statLabel,
+                    { color: theme.colors.textSoft },
+                  ]}
+                >
+                  S&amp;P 500 (example)
+                </Text>
+                <Text
+                  style={[
+                    styles.statValue,
+                    { color: theme.colors.textPrimary },
+                  ]}
+                >
+                  +0.8%
+                </Text>
+                <Text
+                  style={[
+                    styles.statChip,
+                    { color: theme.colors.accent },
+                  ]}
+                >
+                  Mild uptrend
+                </Text>
+              </View>
+
+              <View
+                style={[
+                  styles.statCard,
+                  {
+                    backgroundColor: theme.colors.card,
+                    borderColor: theme.colors.cardBorder,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.statLabel,
+                    { color: theme.colors.textSoft },
+                  ]}
+                >
+                  BTC / USDT (example)
+                </Text>
+                <Text
+                  style={[
+                    styles.statValue,
+                    { color: theme.colors.textPrimary },
+                  ]}
+                >
+                  +2.3%
+                </Text>
+                <Text
+                  style={[
+                    styles.statChip,
+                    { color: theme.colors.accent },
+                  ]}
+                >
+                  High momentum
+                </Text>
+              </View>
+            </View>
+
+            <Text
+              style={{
+                fontSize: 11,
+                marginBottom: 12,
+                color: theme.colors.textSoft,
+              }}
+            >
+              Real market data will appear here once you&apos;re signed in.
+            </Text>
+
+            <View
               style={[
-                styles.aiPillLabel,
-                { color: theme.colors.textSoft },
+                styles.aiPill,
+                {
+                  borderColor: theme.colors.cardBorder,
+                  backgroundColor: theme.colors.background,
+                },
               ]}
             >
-              Example AI insight:
-            </Text>
+              <Text
+                style={[
+                  styles.aiPillLabel,
+                  { color: theme.colors.textSoft },
+                ]}
+              >
+                Example AI insight:
+              </Text>
+              <Text
+                style={[
+                  styles.aiPillText,
+                  { color: theme.colors.textPrimary },
+                ]}
+              >
+                “Global markets show a risk-on shift. AI predicts increased
+                volatility in tech and crypto sectors over the next 12 hours.”
+              </Text>
+            </View>
+          </View>
+
+          {/* SECTION TITLE */}
+          <View style={styles.section}>
             <Text
               style={[
-                styles.aiPillText,
+                styles.sectionTitle,
                 { color: theme.colors.textPrimary },
               ]}
             >
-              “Global markets show a risk-on shift. AI predicts increased
-              volatility in tech and crypto sectors over the next 12 hours.”
+              What Tredia helps you with
             </Text>
+
+            <View style={styles.bulletList}>
+              <Text
+                style={[styles.bullet, { color: theme.colors.textSoft }]}
+              >
+                • Get clear AI explanations of what&apos;s moving and why — in
+                human language.
+              </Text>
+              <Text
+                style={[styles.bullet, { color: theme.colors.textSoft }]}
+              >
+                • Spot global trends and &quot;next big jump&quot;
+                probabilities, not just prices.
+              </Text>
+              <Text
+                style={[styles.bullet, { color: theme.colors.textSoft }]}
+              >
+                • Start with paper trading, challenges and community — then move
+                to live capital when you&apos;re ready.
+              </Text>
+            </View>
+
+            {/* Small feature row to make it feel less static */}
+            <View style={styles.featureRow}>
+              <Text
+                style={[
+                  styles.featureChip,
+                  {
+                    backgroundColor: theme.colors.card,
+                    color: theme.colors.textPrimary,
+                  },
+                ]}
+              >
+                🤖 Multi-AI mentor
+              </Text>
+              <Text
+                style={[
+                  styles.featureChip,
+                  {
+                    backgroundColor: theme.colors.card,
+                    color: theme.colors.textPrimary,
+                  },
+                ]}
+              >
+                📊 Live market pulse
+              </Text>
+              <Text
+                style={[
+                  styles.featureChip,
+                  {
+                    backgroundColor: theme.colors.card,
+                    color: theme.colors.textPrimary,
+                  },
+                ]}
+              >
+                🎯 Paper first, then risk
+              </Text>
+            </View>
           </View>
         </View>
 
-        {/* SECTION TITLE */}
-        <View style={styles.section}>
-          <Text
-            style={[
-              styles.sectionTitle,
-              { color: theme.colors.textPrimary },
-            ]}
-          >
-            What Tredia helps you with
-          </Text>
-
-          <View style={styles.bulletList}>
-            <Text
-              style={[styles.bullet, { color: theme.colors.textSoft }]}
-            >
-              • Get clear AI explanations of what&apos;s moving and why — in
-              human language.
-            </Text>
-            <Text
-              style={[styles.bullet, { color: theme.colors.textSoft }]}
-            >
-              • Spot global trends and &quot;next big jump&quot; probabilities,
-              not just prices.
-            </Text>
-            <Text
-              style={[styles.bullet, { color: theme.colors.textSoft }]}
-            >
-              • Start with paper trading, challenges and community — then move
-              to live capital when you&apos;re ready.
-            </Text>
-          </View>
-        </View>
-
-        {/* CTA BUTTONS */}
+        {/* CTA BUTTONS – anchored lower on the screen */}
         <View style={styles.buttonsBlock}>
           <TouchableOpacity
             style={[
@@ -277,14 +317,19 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingTop: 60,
-    paddingBottom: 40,
+    paddingTop: 40,
+    paddingBottom: 24,
+    flexGrow: 1,
+    justifyContent: "space-between", // top content + CTA separated
+  },
+  topSection: {
+    flexShrink: 1,
   },
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: 20,
   },
   logo: {
     fontSize: 18,
@@ -310,7 +355,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 1,
     padding: 20,
-    marginBottom: 24,
+    marginBottom: 22,
   },
   heroTitle: {
     fontSize: 24,
@@ -357,7 +402,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
   },
-  section: { marginBottom: 28 },
+  section: { marginBottom: 10 },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "600",
@@ -368,7 +413,21 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
   },
-  buttonsBlock: { marginTop: 4 },
+  featureRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 10,
+  },
+  featureChip: {
+    fontSize: 11,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+  },
+  buttonsBlock: {
+    marginTop: 12,
+  },
   primaryButton: {
     borderRadius: 999,
     paddingVertical: 13,

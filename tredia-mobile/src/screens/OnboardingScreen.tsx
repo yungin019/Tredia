@@ -30,58 +30,65 @@ const OnboardingScreen: React.FC = () => {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* TITLE */}
-        <Text style={styles.title}>Welcome to Tredia</Text>
-        <Text style={styles.subtitle}>
-          Let's show you how your AI mentor will guide your trading decisions.
-        </Text>
-
-        {/* CARD 1 */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>🤖 Your AI Trading Mentor</Text>
-          <Text style={styles.cardText}>
-            Tredia analyses markets 24/7 using news, sentiment, volatility data
-            and smart pattern detection. You get clear insights — no noise.
+        {/* TOP BLOCK: title + cards */}
+        <View style={styles.topBlock}>
+          {/* TITLE */}
+          <Text style={styles.title}>Welcome to Tredia</Text>
+          <Text style={styles.subtitle}>
+            Let&apos;s show you how your AI mentor will guide your trading
+            decisions.
           </Text>
+
+          {/* CARD 1 */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>🤖 Your AI Trading Mentor</Text>
+            <Text style={styles.cardText}>
+              Tredia analyses markets 24/7 using news, sentiment, volatility
+              data and smart pattern detection. You get clear insights — no
+              noise.
+            </Text>
+          </View>
+
+          {/* CARD 2 */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>📊 Real-time Market Signals</Text>
+            <Text style={styles.cardText}>
+              Receive probability-based signals for stocks, crypto and indices.
+              Know when the market is trending, reversing or ranging.
+            </Text>
+          </View>
+
+          {/* CARD 3 */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>🎯 Practice With Zero Risk</Text>
+            <Text style={styles.cardText}>
+              Before risking real money, use paper trading to practice
+              execution, discipline and risk management.
+            </Text>
+          </View>
+
+          {/* CARD 4 */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>💎 Subscription Options</Text>
+            <Text style={styles.cardText}>
+              • Free plan: basic access{"\n"}
+              • Pro: full signals + deeper insights{"\n"}
+              • Elite: unlimited AI, sentiment radar &amp; advanced coaching
+            </Text>
+          </View>
         </View>
 
-        {/* CARD 2 */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>📊 Real-time Market Signals</Text>
-          <Text style={styles.cardText}>
-            Receive probability-based signals for stocks, crypto and indices.
-            Know when the market is trending, reversing or ranging.
+        {/* CTA BLOCK pinned lower */}
+        <View style={styles.bottomBlock}>
+          <TouchableOpacity style={styles.button} onPress={handleContinue}>
+            <Text style={styles.buttonText}>Continue to Tredia</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.footerText}>
+            Tredia helps you interpret markets — you stay in control of your
+            decisions.
           </Text>
         </View>
-
-        {/* CARD 3 */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>🎯 Practice With Zero Risk</Text>
-          <Text style={styles.cardText}>
-            Before risking real money, use paper trading to practice execution,
-            discipline and risk management.
-          </Text>
-        </View>
-
-        {/* CARD 4 */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>💎 Subscription Options</Text>
-          <Text style={styles.cardText}>
-            • Free plan: basic access{"\n"}
-            • Pro: full signals + deeper insights{"\n"}
-            • Elite: unlimited AI, sentiment radar & advanced coaching
-          </Text>
-        </View>
-
-        {/* CTA */}
-        <TouchableOpacity style={styles.button} onPress={handleContinue}>
-          <Text style={styles.buttonText}>Continue to Tredia</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.footerText}>
-          Tredia helps you interpret markets — you stay in control of your
-          decisions.
-        </Text>
       </ScrollView>
     </View>
   );
@@ -95,7 +102,12 @@ const makeStyles = (theme: any) =>
     },
     content: {
       padding: 24,
-      paddingBottom: 80,
+      paddingBottom: 24,
+      flexGrow: 1,
+      justifyContent: "space-between", // top block + bottom block
+    },
+    topBlock: {
+      flexShrink: 1,
     },
     title: {
       fontSize: 28,
@@ -115,7 +127,7 @@ const makeStyles = (theme: any) =>
       borderColor: theme.colors.cardBorder,
       borderRadius: 16,
       padding: 18,
-      marginBottom: 20,
+      marginBottom: 16,
     },
     cardTitle: {
       fontSize: 16,
@@ -128,12 +140,15 @@ const makeStyles = (theme: any) =>
       lineHeight: 20,
       color: theme.colors.textSoft,
     },
+    bottomBlock: {
+      marginTop: 8,
+    },
     button: {
       backgroundColor: theme.colors.primary,
       paddingVertical: 14,
       borderRadius: 16,
       alignItems: "center",
-      marginTop: 12,
+      marginTop: 4,
     },
     buttonText: {
       color: theme.colors.background,
@@ -143,7 +158,7 @@ const makeStyles = (theme: any) =>
     footerText: {
       fontSize: 12,
       textAlign: "center",
-      marginTop: 18,
+      marginTop: 14,
       color: theme.colors.textSoft,
       lineHeight: 18,
     },

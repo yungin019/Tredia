@@ -46,7 +46,7 @@ type BriefObject = {
 type BriefState = string | BriefObject | null;
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const NEWS_PAGE_WIDTH = SCREEN_WIDTH;
+const NEWS_PAGE_WIDTH = SCREEN_WIDTH - 40; // match card width
 
 export default function HomeScreen() {
   const theme: any = useTheme();

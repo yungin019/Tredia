@@ -1,23 +1,54 @@
 // src/navigation/ProfileNavigator.tsx
+
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { TouchableOpacity, Text } from "react-native";
 
 import ProfileScreen from "../screens/ProfileScreen";
 import SettingsScreen from "../screens/SettingsScreen";
-import LogoutScreen from "../screens/LogoutScreen";
+import { useTheme } from "../context/ThemeContext";
 
-const Stack = createNativeStackNavigator();
+export type ProfileStackParamList = {
+  ProfileMain: undefined;
+  Settings: undefined;
+};
 
-export default function ProfileNavigator() {
+const Stack = createNativeStackNavigator<ProfileStackParamList>();
+
+const ProfileNavigator: React.FC = () => {
+  const theme: any = useTheme();
+
   return (
     <Stack.Navigator>
       <Stack.Screen
         name="ProfileMain"
         component={ProfileScreen}
-        options={{ headerShown: false }}
+        options={({ navigation }) => ({
+          title: "Profile",
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={() => navigation.navigate("Settings")}
+            >
+              <Text
+                style={{
+                  color: theme.accent,
+                  fontSize: 14,
+                  fontWeight: "600",
+                }}
+              >
+                Settings
+              </Text>
+            </TouchableOpacity>
+          ),
+        })}
       />
-      <Stack.Screen name="Settings" component={SettingsScreen} />
-      <Stack.Screen name="Logout" component={LogoutScreen} />
+      <Stack.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{ title: "Settings" }}
+      />
     </Stack.Navigator>
   );
-}
+};
+
+export default ProfileNavigator;

@@ -57,7 +57,7 @@ const STEPS = [
 
 const OnboardingMentorScreen: React.FC = () => {
   const navigation = useNavigation<any>();
-  const theme = useTheme();
+  const theme: any = useTheme();
   const [stepIndex, setStepIndex] = useState(0);
 
   const step = STEPS[stepIndex];
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 18,
-    paddingTop: 6,
+    paddingTop: 8, // slightly more breathing room
     paddingBottom: 4,
   },
   backButton: {
@@ -268,8 +268,8 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 22,
-    paddingTop: 10,
-    paddingBottom: 40,
+    paddingTop: 18, // pushed a bit lower on screen
+    paddingBottom: 32,
   },
   aiBubble: {
     flexDirection: "row",
@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: 12,
     borderWidth: 1,
-    marginTop: 10,
+    marginTop: 4,
     alignSelf: "flex-start",
   },
   aiAvatar: {
@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   stepLabel: {
-    marginTop: 26,
+    marginTop: 24,
     fontSize: 13,
   },
   title: {
@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
   },
   dotsRow: {
     flexDirection: "row",
-    marginTop: 26,
+    marginTop: 24,
     justifyContent: "center",
   },
   dot: {
@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
   },
   bottomBar: {
     paddingHorizontal: 22,
-    paddingBottom: 28,
+    paddingBottom: 18, // less than before → pushes up a bit
   },
   primaryButton: {
     paddingVertical: 16,
@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   secondaryLink: {
-    marginTop: 14,
+    marginTop: 12,
   },
   secondaryText: {
     fontSize: 14,
