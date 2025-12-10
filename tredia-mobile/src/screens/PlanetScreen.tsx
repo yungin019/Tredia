@@ -79,7 +79,33 @@ const PlanetScreen: React.FC = () => {
   };
 
   // ------------- SAFE EXTRACTED FIELDS -------------
-  const summary = dashboard?.summary ?? null;
+  const rawSummary = dashboard?.summary ?? null;
+
+  // summary can be:
+  // - string (legacy)
+  // - { title, text } (new AiDashboardPayload)
+  // We normalize everything into a single summaryText string.
+  let summaryText: string | undefined;
+  if (typeof rawSummary === "string") {
+    summaryText = rawSummary;
+  } else if (rawSummary && typeof rawSummary === "object") {
+    const maybeTitle =
+      typeof (rawSummary as any).title === "string"
+        ? (rawSummary as any).title
+        : "";
+    const maybeText =
+      typeof (rawSummary as any).text === "string"
+        ? (rawSummary as any).text
+        : "";
+
+    if (maybeTitle && maybeText) {
+      summaryText = `${maybeTitle} — ${maybeText}`;
+    } else {
+      summaryText = maybeTitle || maybeText || undefined;
+    }
+  } else {
+    summaryText = undefined;
+  }
 
   const marketMood = dashboard?.marketMood ?? null;
   const moodLabel = marketMood?.label ?? "Neutral";
@@ -216,7 +242,7 @@ const PlanetScreen: React.FC = () => {
               {moodLabel}
             </Text>
 
-            {summary && (
+            {summaryText && (
               <Text
                 style={[
                   styles.heroSummary,
@@ -224,7 +250,7 @@ const PlanetScreen: React.FC = () => {
                 ]}
                 numberOfLines={3}
               >
-                {summary}
+                {summaryText}
               </Text>
             )}
 
