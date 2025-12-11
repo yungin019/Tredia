@@ -1,6 +1,4 @@
-// src/services/planClient.ts
-
-import { api } from "./aiClient";
+import { api } from "./api";   // ✅ FIX — correct client
 
 export type PlanName = "FREE" | "PRO" | "ELITE";
 
@@ -10,7 +8,7 @@ export interface PlanInfo {
   description?: string | null;
   priceMonthly: number;
   currency: string;
-  aiDailyLimit: number | null; // null = unlimited
+  aiDailyLimit: number | null;
 }
 
 export interface UserPlanInfo {
@@ -23,10 +21,6 @@ export interface UserPlanInfo {
   source?: string;
 }
 
-/**
- * Fetch available plans from /api/plans.
- * Uses whatever the backend returns (DB or config).
- */
 export async function fetchPlans(): Promise<PlanInfo[]> {
   const res = await api.get("/plans");
   const data = res.data || {};
@@ -45,9 +39,6 @@ export async function fetchPlans(): Promise<PlanInfo[]> {
   }));
 }
 
-/**
- * Fetch current user's plan + AI usage from /api/user/plan.
- */
 export async function fetchUserPlan(): Promise<UserPlanInfo> {
   const res = await api.get("/user/plan");
   const data = res.data || {};
@@ -70,10 +61,6 @@ export async function fetchUserPlan(): Promise<UserPlanInfo> {
   };
 }
 
-/**
- * Change current user's plan via POST /api/user/plan.
- * Body: { planName: "FREE" | "PRO" | "ELITE" }
- */
 export async function changeUserPlan(
   planName: PlanName
 ): Promise<UserPlanInfo> {
