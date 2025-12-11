@@ -24,16 +24,10 @@ const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
       ]}
     >
       <ScrollView
-        contentContainerStyle={[
-          styles.scrollContent,
-          {
-            // flex so we can space content and keep buttons visible
-            backgroundColor: theme.colors.background,
-          },
-        ]}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View>
+        <View style={styles.main}>
           {/* TOP BRAND */}
           <View style={styles.headerRow}>
             <Text style={[styles.logo, { color: theme.colors.accent }]}>
@@ -77,23 +71,23 @@ const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
             ]}
           >
             <Text
-              style={[
-                styles.heroTitle,
-                { color: theme.colors.textPrimary },
-              ]}
+              style={[styles.heroTitle, { color: theme.colors.textPrimary }]}
             >
               Your AI market brain, always on.
             </Text>
 
             <Text
-              style={[
-                styles.heroSubtitle,
-                { color: theme.colors.textSoft },
-              ]}
+              style={[styles.heroSubtitle, { color: theme.colors.textSoft }]}
             >
-              Tredia combines multiple AIs — one for news, one for markets,
-              one for your profile, and one that explains everything in plain
+              Tredia combines multiple AIs — one for news, one for markets, one
+              for your profile, and one that explains everything in plain
               language.
+            </Text>
+
+            <Text
+              style={[styles.heroSubtitleSmall, { color: theme.colors.textSoft }]}
+            >
+              It scans global events and momentum to spot what could move next.
             </Text>
 
             <View style={styles.statsRow}>
@@ -220,73 +214,64 @@ const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
 
             <View style={styles.bulletList}>
               <Text
-                style={[
-                  styles.bullet,
-                  { color: theme.colors.textSoft },
-                ]}
+                style={[styles.bullet, { color: theme.colors.textSoft }]}
               >
                 • Get clear AI explanations of what&apos;s moving and why — in
                 human language.
               </Text>
               <Text
-                style={[
-                  styles.bullet,
-                  { color: theme.colors.textSoft },
-                ]}
+                style={[styles.bullet, { color: theme.colors.textSoft }]}
               >
                 • Spot global trends and &quot;next big jump&quot;
                 probabilities, not just prices.
               </Text>
               <Text
-                style={[
-                  styles.bullet,
-                  { color: theme.colors.textSoft },
-                ]}
+                style={[styles.bullet, { color: theme.colors.textSoft }]}
               >
-                • Start with paper trading and community before moving to live
-                capital.
+                • Start with paper trading, challenges and community — then move
+                to live capital when you&apos;re ready.
               </Text>
             </View>
           </View>
-        </View>
 
-        {/* CTA BUTTONS – pinned towards bottom */}
-        <View style={styles.buttonsBlock}>
-          <TouchableOpacity
-            style={[
-              styles.primaryButton,
-              { backgroundColor: theme.colors.accent },
-            ]}
-            onPress={() => navigation.navigate("SignIn")}
-          >
-            <Text style={styles.primaryButtonText}>Sign in</Text>
-          </TouchableOpacity>
+          {/* CTA BUTTONS */}
+          <View style={styles.buttonsBlock}>
+            <TouchableOpacity
+              style={[
+                styles.primaryButton,
+                { backgroundColor: theme.colors.accent },
+              ]}
+              onPress={() => navigation.navigate("SignIn")}
+            >
+              <Text style={styles.primaryButtonText}>Sign in</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[
-              styles.secondaryButton,
-              { borderColor: theme.colors.cardBorder },
-            ]}
-            onPress={() => navigation.navigate("SignUp")}
-          >
+            <TouchableOpacity
+              style={[
+                styles.secondaryButton,
+                { borderColor: theme.colors.cardBorder },
+              ]}
+              onPress={() => navigation.navigate("SignUp")}
+            >
+              <Text
+                style={[
+                  styles.secondaryButtonText,
+                  { color: theme.colors.textPrimary },
+                ]}
+              >
+                Create an account
+              </Text>
+            </TouchableOpacity>
+
             <Text
               style={[
-                styles.secondaryButtonText,
-                { color: theme.colors.textPrimary },
+                styles.footerHint,
+                { color: theme.colors.textSoft },
               ]}
             >
-              Create an account
+              Start with paper trading and let Super AI guide your next move.
             </Text>
-          </TouchableOpacity>
-
-          <Text
-            style={[
-              styles.footerHint,
-              { color: theme.colors.textSoft },
-            ]}
-          >
-            Start with paper trading and let Super AI guide your next move.
-          </Text>
+          </View>
         </View>
       </ScrollView>
     </View>
@@ -300,8 +285,11 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 40,      // was 60
-    paddingBottom: 24,   // was 40
+    paddingTop: 40,
+    paddingBottom: 24,
+  },
+  main: {
+    flex: 1,
     justifyContent: "space-between",
   },
   headerRow: {
@@ -343,6 +331,10 @@ const styles = StyleSheet.create({
   },
   heroSubtitle: {
     fontSize: 14,
+    marginBottom: 6,
+  },
+  heroSubtitleSmall: {
+    fontSize: 13,
     marginBottom: 14,
   },
   statsRow: {
@@ -361,9 +353,9 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   statValue: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: "700",
-    marginBottom: 2,
+    marginBottom: 4,
   },
   statChip: {
     fontSize: 11,
@@ -381,7 +373,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
   },
-  section: { marginBottom: 20 },
+  section: { marginBottom: 18 },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "600",
@@ -392,12 +384,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
   },
-  buttonsBlock: { marginTop: 8 },
+  buttonsBlock: { marginTop: 4 },
   primaryButton: {
     borderRadius: 999,
     paddingVertical: 13,
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 8,
   },
   primaryButtonText: {
     color: "#ffffff",
@@ -416,7 +408,7 @@ const styles = StyleSheet.create({
   },
   footerHint: {
     fontSize: 12,
-    marginTop: 8,
+    marginTop: 6,
     textAlign: "center",
   },
 });

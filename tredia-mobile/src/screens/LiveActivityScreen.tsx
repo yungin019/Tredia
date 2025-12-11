@@ -145,11 +145,6 @@ const LiveActivityScreen: React.FC = () => {
             ? created.toLocaleTimeString()
             : "";
 
-          const safeSymbol =
-            item.symbol && item.symbol.trim().length > 0
-              ? item.symbol.trim().toUpperCase()
-              : null;
-
           return (
             <TouchableOpacity
               key={item.id}
@@ -161,23 +156,23 @@ const LiveActivityScreen: React.FC = () => {
                 },
               ]}
               onPress={() => {
-                if (safeSymbol) {
+                if (item.symbol) {
                   navigation.navigate("AssetDetail", {
-                    symbol: safeSymbol,
+                    symbol: item.symbol,
                   });
                 }
               }}
             >
               <View style={styles.cardHeaderRow}>
                 <View style={{ flex: 1 }}>
-                  {safeSymbol && (
+                  {item.symbol && (
                     <Text
                       style={[
                         styles.symbol,
                         { color: theme.textPrimary },
                       ]}
                     >
-                      {safeSymbol}
+                      {item.symbol}
                     </Text>
                   )}
                   <Text
@@ -258,7 +253,7 @@ const LiveActivityScreen: React.FC = () => {
           );
         })}
 
-        <View style={{ height: 32 }} />
+        <View style={{ height: 24 }} />
       </ScrollView>
     </View>
   );
@@ -277,8 +272,8 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 16,
-    paddingTop: 8,      // ↓ was 16
-    paddingBottom: 4,   // ↓ was 8
+    paddingTop: 8,
+    paddingBottom: 4,
   },
   title: {
     fontSize: 20,
@@ -293,7 +288,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingBottom: 24,
+    paddingBottom: 16,
   },
   errorText: {
     fontSize: 12,

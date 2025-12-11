@@ -78,7 +78,8 @@ type AiDashboardNewsPayload = {
 // --------------------------------------------------------------
 
 const AssetDetailScreen: React.FC<Props> = ({ route, navigation }) => {
-  const { symbol } = route.params;
+  // rename to avoid confusion and allow safer logic
+  const { symbol: routeSymbol } = route.params;
   const theme: any = useTheme();
 
   const { openTradeModal, TradeModalElement } = useTradeModal();
@@ -91,126 +92,149 @@ const AssetDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    setError(null);
-    setLoading(true);
+  // symbol that we actually show in the UI
+  const displaySymbol: string | undefined =
+    info?.symbol ?? routeSymbol ?? undefined;
 
-    try {
-      // --- 1) LIVE ASSET INFO ---
-      const infoRes = await api.get(
-        `/markets/info/${encodeURIComponent(symbol)}`
-      );
+  const load = useCallback(
+    async (isRefresh = false) => {
+      setError(null);
+      if (isRefresh) setRefreshing(true);
+      else setLoading(true);
 
-      const infoPayload = infoRes.data?.info ?? infoRes.data ?? {};
-      const normalizedInfo: AssetInfo = {
-        symbol: infoPayload.symbol ?? symbol,
-        name: infoPayload.name ?? infoPayload.companyName ?? null,
-        price:
-          typeof infoPayload.price === "number"
-            ? infoPayload.price
-            : typeof infoPayload.last === "number"
-            ? infoPayload.last
-            : null,
-        changePct:
-          typeof infoPayload.changePct === "number"
-            ? infoPayload.changePct
-            : typeof infoPayload.percentChange === "number"
-            ? infoPayload.percentChange
-            : null,
-        changeAbs:
-          typeof infoPayload.changeAbs === "number"
-            ? infoPayload.changeAbs
-            : typeof infoPayload.change === "number"
-            ? infoPayload.change
-            : null,
-        currency: infoPayload.currency ?? infoPayload.curr ?? null,
-        marketCap: infoPayload.marketCap ?? null,
-        volume24h: infoPayload.volume24h ?? infoPayload.volume ?? null,
-        open: infoPayload.open ?? null,
-        high: infoPayload.high ?? null,
-        low: infoPayload.low ?? null,
-        prevClose: infoPayload.prevClose ?? infoPayload.previousClose ?? null,
-        exchange: infoPayload.exchange ?? null,
-        assetType: infoPayload.assetType ?? infoPayload.type ?? null,
-      };
+      // Normalize symbol from route
+      const trimmed = routeSymbol?.trim() ?? "";
+      if (!trimmed) {
+        // No symbol → don't hit API, just show a clean message
+        console.log("[AssetDetail] No symbol provided in route params");
+        setInfo(null);
+        setCandles([]);
+        setNewsImpact([]);
+        setError("No symbol provided for this asset.");
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
 
-      setInfo(normalizedInfo);
+      const symbol = trimmed.toUpperCase();
 
-      // --- 2) LIVE OHLC CANDLES ---
-      const ohlcRes = await api.get(
-        `/markets/ohlc/${encodeURIComponent(symbol)}`
-      );
+      try {
+        // --- 1) LIVE ASSET INFO ---
+        const infoRes = await api.get(
+          `/markets/info/${encodeURIComponent(symbol)}`
+        );
 
-      const raw = ohlcRes.data;
-      const candleArray: Candle[] = Array.isArray(raw?.candles)
-        ? raw.candles
-        : Array.isArray(raw)
-        ? raw
-        : [];
+        const infoPayload = infoRes.data?.info ?? infoRes.data ?? {};
+        const normalizedInfo: AssetInfo = {
+          symbol: infoPayload.symbol ?? symbol,
+          name: infoPayload.name ?? infoPayload.companyName ?? null,
+          price:
+            typeof infoPayload.price === "number"
+              ? infoPayload.price
+              : typeof infoPayload.last === "number"
+              ? infoPayload.last
+              : null,
+          changePct:
+            typeof infoPayload.changePct === "number"
+              ? infoPayload.changePct
+              : typeof infoPayload.percentChange === "number"
+              ? infoPayload.percentChange
+              : null,
+          changeAbs:
+            typeof infoPayload.changeAbs === "number"
+              ? infoPayload.changeAbs
+              : typeof infoPayload.change === "number"
+              ? infoPayload.change
+              : null,
+          currency: infoPayload.currency ?? infoPayload.curr ?? null,
+          marketCap: infoPayload.marketCap ?? null,
+          volume24h: infoPayload.volume24h ?? infoPayload.volume ?? null,
+          open: infoPayload.open ?? null,
+          high: infoPayload.high ?? null,
+          low: infoPayload.low ?? null,
+          prevClose: infoPayload.prevClose ?? infoPayload.previousClose ?? null,
+          exchange: infoPayload.exchange ?? null,
+          assetType: infoPayload.assetType ?? infoPayload.type ?? null,
+        };
 
-      const cleanedCandles: Candle[] = candleArray
-        .filter(
-          (c) =>
-            c &&
-            typeof c.open === "number" &&
-            typeof c.high === "number" &&
-            typeof c.low === "number" &&
-            typeof c.close === "number"
-        )
-        .map((c) => ({
-          time: c.time,
-          open: c.open,
-          high: c.high,
-          low: c.low,
-          close: c.close,
-          volume: c.volume ?? null,
-        }));
+        setInfo(normalizedInfo);
 
-      setCandles(cleanedCandles);
-    } catch (e: any) {
-      console.log("[AssetDetail] load price/ohlc error", e?.message || e);
-      setError("Failed to load live market data for this asset.");
-    }
+        // --- 2) LIVE OHLC CANDLES ---
+        const ohlcRes = await api.get(
+          `/markets/ohlc/${encodeURIComponent(symbol)}`
+        );
 
-    // --- 3) SUPER AI NEWS IMPACT (non-blocking) ---
-    try {
-      const dashRes = await api.get<AiDashboardNewsPayload>("/ai/dashboard", {
-        params: {
-          newsLimit: 30,
-        },
-      });
+        const raw = ohlcRes.data;
+        const candleArray: Candle[] = Array.isArray(raw?.candles)
+          ? raw.candles
+          : Array.isArray(raw)
+          ? raw
+          : [];
 
-      const rawNews =
-        dashRes.data?.newsSentiment ?? dashRes.data?.newsRadar ?? [];
-      const allNews: NewsSentiment[] = Array.isArray(rawNews) ? rawNews : [];
+        const cleanedCandles: Candle[] = candleArray
+          .filter(
+            (c) =>
+              c &&
+              typeof c.open === "number" &&
+              typeof c.high === "number" &&
+              typeof c.low === "number" &&
+              typeof c.close === "number"
+          )
+          .map((c) => ({
+            time: c.time,
+            open: c.open,
+            high: c.high,
+            low: c.low,
+            close: c.close,
+            volume: c.volume ?? null,
+          }));
 
-      const byAsset = allNews.filter(
-        (n) =>
-          Array.isArray(n.impactedSymbols) &&
-          n.impactedSymbols.includes(symbol)
-      );
+        setCandles(cleanedCandles);
+      } catch (e: any) {
+        console.log("[AssetDetail] load price/ohlc error", e?.message || e);
+        setError("Failed to load live market data for this asset.");
+      }
 
-      // Take top 4 with highest impact score
-      const sorted = [...byAsset].sort(
-        (a, b) => (b.impactScore ?? 0) - (a.impactScore ?? 0)
-      );
-      setNewsImpact(sorted.slice(0, 4));
-    } catch (e: any) {
-      console.log("[AssetDetail] load news impact error", e?.message || e);
-      // Don’t surface error to user here – asset data is the priority.
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [symbol]);
+      // --- 3) SUPER AI NEWS IMPACT (non-blocking) ---
+      try {
+        const dashRes = await api.get<AiDashboardNewsPayload>("/ai/dashboard", {
+          params: {
+            newsLimit: 30,
+          },
+        });
+
+        const rawNews =
+          dashRes.data?.newsSentiment ?? dashRes.data?.newsRadar ?? [];
+        const allNews: NewsSentiment[] = Array.isArray(rawNews) ? rawNews : [];
+
+        const byAsset = allNews.filter(
+          (n) =>
+            Array.isArray(n.impactedSymbols) &&
+            n.impactedSymbols.includes(symbol)
+        );
+
+        // Take top 4 with highest impact score
+        const sorted = [...byAsset].sort(
+          (a, b) => (b.impactScore ?? 0) - (a.impactScore ?? 0)
+        );
+        setNewsImpact(sorted.slice(0, 4));
+      } catch (e: any) {
+        console.log("[AssetDetail] load news impact error", e?.message || e);
+        // Don’t surface error to user here – asset data is the priority.
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [routeSymbol]
+  );
 
   useEffect(() => {
-    void load();
+    void load(false);
   }, [load]);
 
   const onRefresh = () => {
-    setRefreshing(true);
-    void load();
+    void load(true);
   };
 
   const sparklineData =
@@ -224,13 +248,12 @@ const AssetDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const isUp = changePct !== null && changePct >= 0;
 
   const formatNumber = (
-  value: number | null | undefined,
-  decimals = 2 // ✅ correct name
-): string => {
-  if (value === null || value === undefined || Number.isNaN(value)) return "—";
-  return value.toFixed(decimals); // ✅ use "decimals" here
-};
-
+    value: number | null | undefined,
+    decimals = 2
+  ): string => {
+    if (value === null || value === undefined || Number.isNaN(value)) return "—";
+    return value.toFixed(decimals);
+  };
 
   const formatBig = (value: number | null | undefined): string => {
     if (!value && value !== 0) return "—";
@@ -251,7 +274,7 @@ const AssetDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     return "1–7 days";
   };
 
-  if (loading && !info) {
+  if (loading && !info && !error) {
     return (
       <View
         style={[
@@ -306,7 +329,7 @@ const AssetDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             <Text
               style={[styles.symbol, { color: theme.textPrimary }]}
             >
-              {info?.symbol ?? symbol}
+              {displaySymbol ?? "—"}
             </Text>
             {!!info?.name && (
               <Text
@@ -394,6 +417,18 @@ const AssetDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             </View>
           </View>
         </View>
+
+        {/* ERROR MESSAGE (if any) */}
+        {error && (
+          <Text
+            style={[
+              styles.errorText,
+              { color: theme.danger },
+            ]}
+          >
+            {error}
+          </Text>
+        )}
 
         {/* CHART CARD – LIVE CANDLES (SPARKLINE) */}
         <View
@@ -644,7 +679,7 @@ const AssetDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             <Text
               style={[styles.cardTitle, { color: theme.textPrimary }]}
             >
-              News impact on {symbol}
+              News impact on {displaySymbol ?? "this asset"}
             </Text>
             <Text
               style={[styles.cardSubtitle, { color: theme.textSoft }]}
@@ -658,8 +693,9 @@ const AssetDetailScreen: React.FC<Props> = ({ route, navigation }) => {
               style={[styles.emptyText, { color: theme.textSoft }]}
             >
               Super AI doesn&apos;t see any strong, focused news cluster on{" "}
-              {symbol} right now. When a story directly affects this asset, it
-              will appear here with sentiment, impact and horizon.
+              {displaySymbol ?? "this asset"} right now. When a story directly
+              affects this asset, it will appear here with sentiment, impact and
+              horizon.
             </Text>
           )}
 
@@ -761,7 +797,7 @@ const AssetDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             <Text
               style={[styles.cardTitle, { color: theme.textPrimary }]}
             >
-              Ask Tredia AI about {symbol}
+              Ask Tredia AI about {displaySymbol ?? "this asset"}
             </Text>
             <Text
               style={[styles.cardSubtitle, { color: theme.textSoft }]}
@@ -776,8 +812,14 @@ const AssetDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             You&apos;re seeing live price, candles and news impact above.
             {"\n"}
             For real coaching, ask Tredia AI things like:
-            {"\n"}• “Is {symbol} too risky to hold right now?”
-            {"\n"}• “What&apos;s a sane position size for {symbol}?”
+            {"\n"}•{" "}
+            {displaySymbol
+              ? `“Is ${displaySymbol} too risky to hold right now?”`
+              : "“Is this asset too risky to hold right now?”"}
+            {"\n"}•{" "}
+            {displaySymbol
+              ? `“What&apos;s a sane position size for ${displaySymbol}?”`
+              : "“What&apos;s a sane position size for this asset?”"}
             {"\n"}• “Help me build a plan around this ticker.”
           </Text>
 
@@ -790,7 +832,9 @@ const AssetDetailScreen: React.FC<Props> = ({ route, navigation }) => {
               navigation.navigate("HomeTabs", {
                 screen: "AI",
                 params: {
-                  initialQuestion: `Give me a calm, realistic view on ${symbol}.`,
+                  initialQuestion: displaySymbol
+                    ? `Give me a calm, realistic view on ${displaySymbol}.`
+                    : "Give me a calm, realistic view on this asset.",
                 },
               } as any)
             }
@@ -815,7 +859,7 @@ const AssetDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             <Text
               style={[styles.cardTitle, { color: theme.textPrimary }]}
             >
-              Trade {symbol}
+              Trade {displaySymbol ?? "this asset"}
             </Text>
             <Text
               style={[styles.cardSubtitle, { color: theme.textSoft }]}
@@ -826,22 +870,21 @@ const AssetDetailScreen: React.FC<Props> = ({ route, navigation }) => {
           </View>
 
           <NeonButton
-            label={`Trade ${symbol}`}
-            onPress={() => openTradeModal(symbol)}
+            label={
+              displaySymbol ? `Trade ${displaySymbol}` : "Trade"
+            }
+            onPress={() => {
+              if (displaySymbol) {
+                openTradeModal(displaySymbol);
+              } else {
+                console.log(
+                  "[AssetDetail] Tried to open trade modal without symbol"
+                );
+              }
+            }}
             glowColor={theme.accent}
           />
         </View>
-
-        {error && (
-          <Text
-            style={[
-              styles.errorText,
-              { color: theme.danger },
-            ]}
-          >
-            {error}
-          </Text>
-        )}
 
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -918,7 +961,7 @@ const styles = StyleSheet.create({
 
   // PRICE
   priceRow: {
-    marginBottom: 14,
+    marginBottom: 10,
   },
   price: {
     fontSize: 30,
@@ -1070,8 +1113,8 @@ const styles = StyleSheet.create({
 
   // ERROR
   errorText: {
-    marginTop: 10,
+    marginTop: 8,
     fontSize: 12,
-    textAlign: "center",
+    textAlign: "left",
   },
 });
