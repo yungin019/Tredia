@@ -44,6 +44,15 @@ const SettingsScreen: React.FC = () => {
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
+  // ✅ Make native header match app background + colors
+  useEffect(() => {
+    navigation.setOptions({
+      headerStyle: { backgroundColor: theme.background },
+      headerTintColor: theme.textPrimary,
+      headerTitleStyle: { color: theme.textPrimary },
+    });
+  }, [navigation, theme.background, theme.textPrimary]);
+
   const loadPlan = useCallback(async () => {
     try {
       setError(null);

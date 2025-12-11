@@ -59,6 +59,15 @@ const ProfileScreen: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
 
+  // ✅ Make native header match app background + colors
+  useEffect(() => {
+    navigation.setOptions({
+      headerStyle: { backgroundColor: theme.background },
+      headerTintColor: theme.textPrimary,
+      headerTitleStyle: { color: theme.textPrimary },
+    });
+  }, [navigation, theme.background, theme.textPrimary]);
+
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
