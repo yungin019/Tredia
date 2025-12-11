@@ -24,11 +24,16 @@ const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
       ]}
     >
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            // flex so we can space content and keep buttons visible
+            backgroundColor: theme.colors.background,
+          },
+        ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* TOP SECTION (brand + hero + explanation) */}
-        <View style={styles.topSection}>
+        <View>
           {/* TOP BRAND */}
           <View style={styles.headerRow}>
             <Text style={[styles.logo, { color: theme.colors.accent }]}>
@@ -72,18 +77,23 @@ const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
             ]}
           >
             <Text
-              style={[styles.heroTitle, { color: theme.colors.textPrimary }]}
+              style={[
+                styles.heroTitle,
+                { color: theme.colors.textPrimary },
+              ]}
             >
               Your AI market brain, always on.
             </Text>
 
             <Text
-              style={[styles.heroSubtitle, { color: theme.colors.textSoft }]}
+              style={[
+                styles.heroSubtitle,
+                { color: theme.colors.textSoft },
+              ]}
             >
-              Tredia combines multiple AIs — one for news, one for markets, one
-              for your profile, and one that explains everything in plain
-              language. It scans global events and momentum to spot what could
-              move next.
+              Tredia combines multiple AIs — one for news, one for markets,
+              one for your profile, and one that explains everything in plain
+              language.
             </Text>
 
             <View style={styles.statsRow}>
@@ -161,7 +171,7 @@ const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
             <Text
               style={{
                 fontSize: 11,
-                marginBottom: 12,
+                marginBottom: 10,
                 color: theme.colors.textSoft,
               }}
             >
@@ -210,65 +220,37 @@ const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
 
             <View style={styles.bulletList}>
               <Text
-                style={[styles.bullet, { color: theme.colors.textSoft }]}
+                style={[
+                  styles.bullet,
+                  { color: theme.colors.textSoft },
+                ]}
               >
                 • Get clear AI explanations of what&apos;s moving and why — in
                 human language.
               </Text>
               <Text
-                style={[styles.bullet, { color: theme.colors.textSoft }]}
+                style={[
+                  styles.bullet,
+                  { color: theme.colors.textSoft },
+                ]}
               >
                 • Spot global trends and &quot;next big jump&quot;
                 probabilities, not just prices.
               </Text>
               <Text
-                style={[styles.bullet, { color: theme.colors.textSoft }]}
-              >
-                • Start with paper trading, challenges and community — then move
-                to live capital when you&apos;re ready.
-              </Text>
-            </View>
-
-            {/* Small feature row to make it feel less static */}
-            <View style={styles.featureRow}>
-              <Text
                 style={[
-                  styles.featureChip,
-                  {
-                    backgroundColor: theme.colors.card,
-                    color: theme.colors.textPrimary,
-                  },
+                  styles.bullet,
+                  { color: theme.colors.textSoft },
                 ]}
               >
-                🤖 Multi-AI mentor
-              </Text>
-              <Text
-                style={[
-                  styles.featureChip,
-                  {
-                    backgroundColor: theme.colors.card,
-                    color: theme.colors.textPrimary,
-                  },
-                ]}
-              >
-                📊 Live market pulse
-              </Text>
-              <Text
-                style={[
-                  styles.featureChip,
-                  {
-                    backgroundColor: theme.colors.card,
-                    color: theme.colors.textPrimary,
-                  },
-                ]}
-              >
-                🎯 Paper first, then risk
+                • Start with paper trading and community before moving to live
+                capital.
               </Text>
             </View>
           </View>
         </View>
 
-        {/* CTA BUTTONS – anchored lower on the screen */}
+        {/* CTA BUTTONS – pinned towards bottom */}
         <View style={styles.buttonsBlock}>
           <TouchableOpacity
             style={[
@@ -316,14 +298,11 @@ export default WelcomeScreen;
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContent: {
-    paddingHorizontal: 24,
-    paddingTop: 40,
-    paddingBottom: 24,
     flexGrow: 1,
-    justifyContent: "space-between", // top content + CTA separated
-  },
-  topSection: {
-    flexShrink: 1,
+    paddingHorizontal: 24,
+    paddingTop: 40,      // was 60
+    paddingBottom: 24,   // was 40
+    justifyContent: "space-between",
   },
   headerRow: {
     flexDirection: "row",
@@ -354,37 +333,37 @@ const styles = StyleSheet.create({
   heroCard: {
     borderRadius: 24,
     borderWidth: 1,
-    padding: 20,
-    marginBottom: 22,
+    padding: 18,
+    marginBottom: 20,
   },
   heroTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "800",
-    marginBottom: 8,
+    marginBottom: 6,
   },
   heroSubtitle: {
     fontSize: 14,
-    marginBottom: 18,
+    marginBottom: 14,
   },
   statsRow: {
     flexDirection: "row",
     columnGap: 10,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   statCard: {
     flex: 1,
     borderRadius: 16,
     borderWidth: 1,
-    padding: 12,
+    padding: 10,
   },
   statLabel: {
     fontSize: 11,
     marginBottom: 4,
   },
   statValue: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: "700",
-    marginBottom: 4,
+    marginBottom: 2,
   },
   statChip: {
     fontSize: 11,
@@ -392,7 +371,7 @@ const styles = StyleSheet.create({
   aiPill: {
     borderRadius: 16,
     borderWidth: 1,
-    padding: 12,
+    padding: 10,
   },
   aiPillLabel: {
     fontSize: 11,
@@ -402,32 +381,18 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
   },
-  section: { marginBottom: 10 },
+  section: { marginBottom: 20 },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "600",
-    marginBottom: 10,
+    marginBottom: 8,
   },
   bulletList: { rowGap: 4 },
   bullet: {
     fontSize: 13,
     lineHeight: 19,
   },
-  featureRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginTop: 10,
-  },
-  featureChip: {
-    fontSize: 11,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-  },
-  buttonsBlock: {
-    marginTop: 12,
-  },
+  buttonsBlock: { marginTop: 8 },
   primaryButton: {
     borderRadius: 999,
     paddingVertical: 13,

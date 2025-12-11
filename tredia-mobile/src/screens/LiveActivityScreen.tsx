@@ -51,7 +51,6 @@ const LiveActivityScreen: React.FC = () => {
 
       setError(null);
 
-      // ✅ FIXED: no "/api" here
       const res = await api.get<LiveActivityResponse>("/community/live", {
         params: {
           limit: 30,
@@ -146,6 +145,11 @@ const LiveActivityScreen: React.FC = () => {
             ? created.toLocaleTimeString()
             : "";
 
+          const safeSymbol =
+            item.symbol && item.symbol.trim().length > 0
+              ? item.symbol.trim().toUpperCase()
+              : null;
+
           return (
             <TouchableOpacity
               key={item.id}
@@ -157,23 +161,23 @@ const LiveActivityScreen: React.FC = () => {
                 },
               ]}
               onPress={() => {
-                if (item.symbol) {
+                if (safeSymbol) {
                   navigation.navigate("AssetDetail", {
-                    symbol: item.symbol,
+                    symbol: safeSymbol,
                   });
                 }
               }}
             >
               <View style={styles.cardHeaderRow}>
                 <View style={{ flex: 1 }}>
-                  {item.symbol && (
+                  {safeSymbol && (
                     <Text
                       style={[
                         styles.symbol,
                         { color: theme.textPrimary },
                       ]}
                     >
-                      {item.symbol}
+                      {safeSymbol}
                     </Text>
                   )}
                   <Text
@@ -273,8 +277,8 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 8,
+    paddingTop: 8,      // ↓ was 16
+    paddingBottom: 4,   // ↓ was 8
   },
   title: {
     fontSize: 20,

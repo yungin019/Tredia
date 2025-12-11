@@ -250,10 +250,23 @@ export default function HomeScreen() {
     rootNav.navigate("Alerts");
   };
 
-  const openAssetDetail = (symbol: string) => {
-    const rootNav = navigation.getParent?.() ?? navigation;
-    rootNav.navigate("AssetDetail", { symbol });
-  };
+  const openAssetDetail = (symbol?: string) => {
+  if (
+    !symbol ||
+    typeof symbol !== "string" ||
+    symbol.trim().length === 0
+  ) {
+    console.log(
+      "[Home] openAssetDetail called without valid symbol:",
+      symbol
+    );
+    return;
+  }
+
+  const rootNav = navigation.getParent?.() ?? navigation;
+  rootNav.navigate("AssetDetail", { symbol: symbol.trim() });
+};
+
 
   const openAIChat = (presetPrompt?: string) => {
     const rootNav = navigation.getParent?.() ?? navigation;
