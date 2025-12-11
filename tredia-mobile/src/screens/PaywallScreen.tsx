@@ -1,328 +1,483 @@
-import React, { useMemo } from "react";
+// src/screens/PaywallScreen.tsx
+
+import React, { useCallback, useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Platform,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 
 import { useTheme } from "../context/ThemeContext";
 import GlowView from "../components/GlowView";
+import NeonButton from "../components/NeonButton";
 
-// Route params shape coming from SubscriptionScreen
-type PaywallParams = {
-  plan: {
-    name: string;
-    description?: string | null;
-    priceMonthly?: number | null;
-    currency?: string | null;
-    aiDailyLimit?: number | null;
-  };
-  currentPlanName?: string;
+import Purchases, {
+  PurchasesOfferings,
+  PurchasesPackage,
+} from "react-native-purchases";
+
+import {
+  type PlanInfo,
+  type PlanName,
+  fetchUserPlan,
+  changeUserPlan,
+} from "../services/planClient";
+
+type PaywallRouteParams = {
+  plan: PlanInfo;
+  currentPlanName: string;
 };
 
-type PaywallScreenProps = {
-  navigation: any;
-  route: {
-    params: PaywallParams;
-  };
-};
-
-const PaywallScreen: React.FC<PaywallScreenProps> = ({
-  navigation,
-  route,
-}) => {
+const PaywallScreen: React.FC = () => {
   const theme: any = useTheme();
-  const { plan, currentPlanName } = route.params || {};
-  const planName = plan?.name ?? "PRO";
+  const navigation = useNavigation<any>();
+  const route = useRoute<any>();
 
-  const isUpgradeFromFree =
-    (currentPlanName || "FREE").toUpperCase() === "FREE" &&
-    planName.toUpperCase() !== "FREE";
+  const params = route.params as PaywallRouteParams | undefined;
+  const selectedPlan = params?.plan;
+  const currentPlanName =
+    (params?.currentPlanName || "FREE").toString().toUpperCase();
 
-  const priceLabel = useMemo(() => {
-    if (!plan) return "—";
-    const price = typeof plan.priceMonthly === "number" ? plan.priceMonthly : 0;
-    const currency = plan.currency || "SEK";
-    if (price === 0) return "Free";
-    return `${price.toFixed(0)} ${currency}/month`;
-  }, [plan]);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [rcError, setRcError] = useState<string | null>(null);
 
-  const aiLimitLabel = useMemo(() => {
-    if (!plan) return "";
-    if (plan.aiDailyLimit === null || plan.aiDailyLimit === undefined) {
-      return "Unlimited AI messages per day";
-    }
-    return `${plan.aiDailyLimit} AI messages per day`;
-  }, [plan]);
+  if (!selectedPlan) {
+    return (
+      <View
+        style={[
+          styles.center,
+          { backgroundColor: theme.background },
+        ]}
+      >
+        <Text style={{ color: theme.textPrimary, marginBottom: 8 }}>
+          No plan selected.
+        </Text>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={[
+            styles.backBtn,
+            { borderColor: theme.cardBorder },
+          ]}
+        >
+          <Text style={{ color: theme.accent }}>Go back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
-  const perkBullets = useMemo(() => {
-    const upper = planName.toUpperCase();
-    if (upper === "ELITE") {
-      return [
-        "Priority AI mentor with deep, structured breakdowns",
-        "Unlimited AI chat sessions every day",
-        "Advanced community tools and sentiment dashboards",
-        "Full portfolio tools, alerts and paper trading cockpit",
-      ];
-    }
-    if (upper === "PRO") {
-      return [
-        "Full Tredia AI mentor for daily market questions",
-        "Higher daily AI message limit for active traders",
-        "Community insights and trending posts unlocked",
-        "Paper portfolio + trade simulations to practice risk",
-      ];
-    }
-    // FREE (paywall will almost never show this, but keep it safe)
-    return [
-      "Basic access to Tredia AI with limited messages",
-      "Access to core dashboards and market overview",
-      "Start with paper trading and simple portfolio view",
-    ];
-  }, [planName]);
+  const targetPlanName = selectedPlan.name.toUpperCase() as PlanName;
+  const isCurrent =
+    targetPlanName === currentPlanName.toUpperCase();
+  const isDowngrade =
+    targetPlanName === "FREE" &&
+    currentPlanName !== "FREE" &&
+    !isCurrent;
+  const isUpgrade =
+    targetPlanName !== "FREE" && !isCurrent;
 
-  const handleContinue = () => {
-    // 🔒 Here is where you plug RevenueCat / StoreKit / Play Billing.
-    // For now we just navigate back to the Subscription screen.
-    navigation.navigate("Subscription");
+  const priceLabel =
+    selectedPlan.priceMonthly === 0
+      ? "Free"
+      : `${selectedPlan.priceMonthly.toFixed(0)} ${
+          selectedPlan.currency
+        } / month`;
+
+  const explainText = isCurrent
+    ? "You’re already on this plan. You can keep enjoying your current AI limits."
+    : isDowngrade
+    ? "You’re about to move back to the FREE plan. You’ll keep access to Tredia, but with reduced AI limits."
+    : "This plan unlocks deeper AI context, more messages and a better market radar. The purchase is handled securely by the App Store via RevenueCat.";
+
+  const primaryCtaLabel = isCurrent
+    ? "Back to subscription"
+    : isDowngrade
+    ? "Confirm downgrade to FREE"
+    : `Upgrade to ${targetPlanName}`;
+
+  const findPackageForPlan = (
+    offerings: PurchasesOfferings,
+    planName: PlanName
+  ): PurchasesPackage | null => {
+    const offering =
+      offerings.current || offerings.all["default"] || null;
+    if (!offering) return null;
+
+    // TEMP MAPPING – you should align these with your RevenueCat package identifiers
+    const desiredId = `${planName.toLowerCase()}_monthly`;
+
+    const exact = offering.availablePackages.find(
+      (p) => p.identifier === desiredId
+    );
+    if (exact) return exact;
+
+    // Fallback: monthly > annual > first available
+    if (offering.monthly) return offering.monthly;
+    if (offering.annual) return offering.annual;
+    return offering.availablePackages[0] ?? null;
   };
 
-  const handleLater = () => {
-    navigation.goBack();
+  const refreshServerPlan = useCallback(async () => {
+    try {
+      await fetchUserPlan();
+    } catch {
+      // Silent – Settings/Profile will refetch later anyway
+    }
+  }, []);
+
+  const handleDowngradeToFree = useCallback(async () => {
+    setIsProcessing(true);
+    setRcError(null);
+    try {
+      // Optional: logOut from RevenueCat when downgrading to FREE
+      try {
+        await Purchases.logOut();
+      } catch {
+        // Non-blocking if logOut fails
+      }
+
+      await changeUserPlan("FREE");
+      await refreshServerPlan();
+
+      Alert.alert(
+        "Plan updated",
+        "You’re now on the FREE plan. You can always upgrade again later.",
+        [
+          {
+            text: "OK",
+            onPress: () => navigation.goBack(),
+          },
+        ]
+      );
+    } catch (err: any) {
+      console.log("[Paywall] downgrade error:", err?.message || err);
+      setRcError("Failed to update plan on the server.");
+      Alert.alert(
+        "Error",
+        "We couldn’t update your plan. Please try again in a moment."
+      );
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [navigation, refreshServerPlan]);
+
+  const handlePurchaseWithRevenueCat = useCallback(async () => {
+    setIsProcessing(true);
+    setRcError(null);
+    try {
+      const offerings = await Purchases.getOfferings();
+      const pkg = findPackageForPlan(offerings, targetPlanName);
+
+      if (!pkg) {
+        setRcError("No matching subscription package found.");
+        Alert.alert(
+          "Unavailable",
+          "We couldn’t find a subscription package for this plan. Please try again later."
+        );
+        return;
+      }
+
+      const { customerInfo } = await Purchases.purchasePackage(pkg);
+
+      const entitlements = customerInfo.entitlements?.active || {};
+      const hasAny =
+        Object.keys(entitlements).length > 0;
+
+      if (!hasAny) {
+        setRcError(
+          "Purchase completed but no active entitlement detected."
+        );
+        Alert.alert(
+          "Check subscription",
+          "Your purchase went through, but we couldn’t confirm the entitlement. Try restoring purchases or contact support if it doesn’t show up."
+        );
+      }
+
+      try {
+        await changeUserPlan(targetPlanName);
+      } catch (syncErr: any) {
+        console.log(
+          "[Paywall] backend changeUserPlan error:",
+          syncErr?.message || syncErr
+        );
+        setRcError(
+          "Subscription updated on App Store, but server sync failed."
+        );
+      }
+
+      await refreshServerPlan();
+
+      Alert.alert(
+        "Welcome to " + targetPlanName,
+        "Your plan has been updated. Enjoy deeper AI context and higher limits.",
+        [
+          {
+            text: "OK",
+            onPress: () => navigation.goBack(),
+          },
+        ]
+      );
+    } catch (err: any) {
+      console.log("[Paywall] purchase error:", err);
+
+      // RevenueCat cancellation pattern
+      const isUserCancelled =
+        err?.userCancelled === true ||
+        err?.code === "PURCHASE_CANCELLED";
+
+      if (isUserCancelled) {
+        setRcError("Purchase cancelled.");
+        return;
+      }
+
+      setRcError("Purchase failed. Please try again.");
+      Alert.alert(
+        "Purchase error",
+        "We couldn’t complete the purchase. Please try again or contact support."
+      );
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [navigation, refreshServerPlan, targetPlanName]);
+
+  const handleRestorePurchases = useCallback(async () => {
+    setIsProcessing(true);
+    setRcError(null);
+    try {
+      await Purchases.restorePurchases();
+      const updated = await fetchUserPlan();
+
+      Alert.alert(
+        "Restored",
+        `We restored your purchases. Current plan: ${updated.planName}.`,
+        [
+          {
+            text: "OK",
+            onPress: () => navigation.goBack(),
+          },
+        ]
+      );
+    } catch (err: any) {
+      console.log("[Paywall] restore error:", err?.message || err);
+      setRcError("Failed to restore purchases.");
+      Alert.alert(
+        "Restore failed",
+        "We couldn’t restore purchases. Please try again later."
+      );
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [navigation]);
+
+  const handlePrimaryPress = () => {
+    if (isCurrent) {
+      navigation.goBack();
+      return;
+    }
+    if (isDowngrade) {
+      void handleDowngradeToFree();
+      return;
+    }
+    void handlePurchaseWithRevenueCat();
   };
 
   return (
     <View style={[styles.root, { backgroundColor: theme.background }]}>
       {/* HEADER */}
       <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.textPrimary }]}>
-          Upgrade to {planName}
+        <Text
+          style={[styles.title, { color: theme.textPrimary }]}
+        >
+          {selectedPlan.name} plan
         </Text>
-        <Text style={[styles.subtitle, { color: theme.textSoft }]}>
-          Unlock deeper AI coaching, richer analytics and a more powerful
-          trading cockpit.
+        <Text
+          style={[styles.subtitle, { color: theme.textSoft }]}
+        >
+          Control your subscription via the App Store. Tredia just
+          reflects your active plan and AI limits.
         </Text>
       </View>
 
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
       >
-        {/* PLAN HERO */}
+        {/* PLAN CARD */}
         <GlowView radius={22}>
           <View
             style={[
               styles.planCard,
               {
+                borderColor: theme.cardBorder,
                 backgroundColor: theme.surface,
-                borderColor: theme.accent,
               },
             ]}
           >
             <Text
-              style={[styles.planLabel, { color: theme.textSoft }]}
+              style={[
+                styles.planName,
+                { color: theme.textPrimary },
+              ]}
             >
-              You&apos;re choosing
+              {selectedPlan.name}
             </Text>
             <Text
-              style={[styles.planName, { color: theme.textPrimary }]}
-            >
-              {planName}
-            </Text>
-            <Text
-              style={[styles.planPrice, { color: theme.accent }]}
+              style={[
+                styles.planPrice,
+                { color: theme.textPrimary },
+              ]}
             >
               {priceLabel}
             </Text>
 
-            <Text
-              style={[
-                styles.planDescription,
-                { color: theme.textSoft },
-              ]}
-            >
-              {plan?.description ||
-                (planName === "ELITE"
-                  ? "Elite mentor access for traders who want depth, structure and priority AI."
-                  : planName === "PRO"
-                  ? "The main Tredia experience for active traders who want daily AI support."
-                  : "Core access to Tredia with a limited but real AI mentor.")}
-            </Text>
-
-            <View style={styles.currentPlanRow}>
+            {selectedPlan.description && (
               <Text
                 style={[
-                  styles.currentPlanText,
+                  styles.planDescription,
                   { color: theme.textSoft },
                 ]}
               >
-                Current plan:{" "}
-                <Text style={{ color: theme.textPrimary }}>
-                  {currentPlanName || "FREE"}
-                </Text>
+                {selectedPlan.description}
               </Text>
-              <Text
-                style={[
-                  styles.currentPlanText,
-                  { color: theme.textSoft },
-                ]}
-              >
-                AI:{" "}
-                <Text style={{ color: theme.textPrimary }}>
-                  {aiLimitLabel}
-                </Text>
-              </Text>
-            </View>
+            )}
 
-            {isUpgradeFromFree && (
+            <View style={styles.badgesRow}>
               <View
                 style={[
-                  styles.upgradeBadge,
-                  {
-                    backgroundColor: `${theme.accent}20`,
-                    borderColor: theme.accent,
-                  },
+                  styles.badge,
+                  { borderColor: theme.cardBorder },
                 ]}
               >
                 <Text
                   style={[
-                    styles.upgradeBadgeText,
-                    { color: theme.accent },
+                    styles.badgeText,
+                    { color: theme.textSoft },
                   ]}
                 >
-                  Big step up from FREE: more AI depth, more sessions, more
-                  tools.
+                  AI limit:{" "}
+                  {selectedPlan.aiDailyLimit === null
+                    ? "Unlimited messages / day"
+                    : `${selectedPlan.aiDailyLimit} messages / day`}
                 </Text>
               </View>
-            )}
+              <View
+                style={[
+                  styles.badge,
+                  { borderColor: theme.cardBorder },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.badgeText,
+                    { color: theme.textSoft },
+                  ]}
+                >
+                  Current: {currentPlanName}
+                </Text>
+              </View>
+            </View>
           </View>
         </GlowView>
 
-        {/* BENEFITS */}
-        <View style={styles.section}>
-          <Text
-            style={[styles.sectionTitle, { color: theme.textPrimary }]}
-          >
-            What you unlock with {planName}
-          </Text>
-          {perkBullets.map((p, idx) => (
-            <View key={idx} style={styles.bulletRow}>
-              <View
-                style={[
-                  styles.bulletDot,
-                  { backgroundColor: theme.accent },
-                ]}
-              />
-              <Text
-                style={[styles.bulletText, { color: theme.textSoft }]}
-              >
-                {p}
-              </Text>
-            </View>
-          ))}
-        </View>
-
-        {/* AI FOCUS SECTION */}
-        <View style={styles.section}>
-          <Text
-            style={[styles.sectionTitle, { color: theme.textPrimary }]}
-          >
-            Tredia AI ≠ signal spam
-          </Text>
-          <Text
-            style={[styles.sectionBody, { color: theme.textSoft }]}
-          >
-            Tredia AI doesn&apos;t shout “BUY NOW” or “100x coin”. It helps you
-            understand scenarios, risk, probabilities and position sizing — so
-            you stay calm when markets get noisy.
-          </Text>
-          <Text
-            style={[styles.sectionBody, { color: theme.textSoft }]}
-          >
-            With {planName}, you can ask more questions, go deeper into your
-            portfolio and build your own process instead of chasing hype.
-          </Text>
-        </View>
-
-        {/* DEVICE / STORE NOTE */}
+        {/* EXPLANATION */}
         <View style={styles.section}>
           <Text
             style={[
-              styles.sectionHintTitle,
+              styles.sectionText,
               { color: theme.textSoft },
             ]}
           >
-            Billing handled by your store
-          </Text>
-          <Text
-            style={[styles.sectionHintText, { color: theme.textSoft }]}
-          >
-            Your subscription will be managed securely by{" "}
-            {Platform.OS === "ios" ? "Apple" : "Google"}. You can cancel, pause
-            or change plans directly in your device settings.
+            {explianOrExplain(explainText)}
           </Text>
         </View>
 
-        <View style={{ height: 80 }} />
-      </ScrollView>
-
-      {/* BOTTOM CTA BAR */}
-      <View
-        style={[
-          styles.bottomBar,
-          { borderTopColor: theme.cardBorder },
-        ]}
-      >
-        <View style={styles.bottomTextCol}>
-          <Text
-            style={[styles.bottomTitle, { color: theme.textPrimary }]}
-          >
-            Continue with {planName}
-          </Text>
-          <Text
-            style={[styles.bottomSubtitle, { color: theme.textSoft }]}
-          >
-            You can downgrade or cancel anytime in your store settings.
-          </Text>
+        {/* PRIMARY CTA */}
+        <View style={styles.section}>
+          <NeonButton
+            label={primaryCtaLabel}
+            onPress={handlePrimaryPress}
+            glowColor={theme.accent}
+            disabled={isProcessing}
+          />
+          {isProcessing && (
+            <View style={styles.processingRow}>
+              <ActivityIndicator size="small" color={theme.accent} />
+              <Text
+                style={[
+                  styles.processingText,
+                  { color: theme.textSoft },
+                ]}
+              >
+                Processing…
+              </Text>
+            </View>
+          )}
         </View>
 
-        <View style={styles.bottomButtons}>
+        {/* SECONDARY ACTIONS */}
+        <View style={styles.section}>
           <TouchableOpacity
             style={[
-              styles.laterBtn,
+              styles.secondaryBtn,
               { borderColor: theme.cardBorder },
             ]}
-            onPress={handleLater}
+            disabled={isProcessing}
+            onPress={handleRestorePurchases}
           >
             <Text
               style={[
-                styles.laterText,
+                styles.secondaryText,
                 { color: theme.textSoft },
               ]}
             >
-              Maybe later
+              Restore purchases
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[
-              styles.primaryBtn,
-              { backgroundColor: theme.accent },
-            ]}
-            onPress={handleContinue}
+            style={styles.linkBtn}
+            onPress={() => navigation.goBack()}
+            disabled={isProcessing}
           >
-            <Text style={styles.primaryText}>
-              Continue
+            <Text
+              style={[
+                styles.linkText,
+                { color: theme.textSoft },
+              ]}
+            >
+              Cancel and go back
             </Text>
           </TouchableOpacity>
         </View>
-      </View>
+
+        {rcError && (
+          <View style={styles.section}>
+            <Text
+              style={[
+                styles.errorText,
+                { color: theme.danger ?? "#ef4444" },
+              ]}
+            >
+              {rcError}
+            </Text>
+          </View>
+        )}
+
+        <View style={{ height: 40 }} />
+      </ScrollView>
     </View>
   );
 };
+
+// Small helper to avoid typos if we want to extend later
+function explianOrExplain(text: string): string {
+  return text;
+}
 
 export default PaywallScreen;
 
@@ -351,140 +506,103 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
 
+  // CENTER FALLBACK
+  center: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  backBtn: {
+    marginTop: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+
   // PLAN CARD
   planCard: {
-    borderRadius: 20,
+    borderRadius: 22,
     borderWidth: 1,
     padding: 16,
     marginTop: 4,
     marginBottom: 16,
   },
-  planLabel: {
-    fontSize: 11,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-  },
   planName: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: "700",
-    marginTop: 4,
   },
   planPrice: {
-    fontSize: 15,
+    marginTop: 4,
+    fontSize: 14,
     fontWeight: "600",
-    marginTop: 2,
   },
   planDescription: {
     marginTop: 8,
     fontSize: 12,
     lineHeight: 18,
   },
-  currentPlanRow: {
+  badgesRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
     marginTop: 10,
   },
-  currentPlanText: {
-    fontSize: 11,
-    marginTop: 2,
-  },
-  upgradeBadge: {
-    marginTop: 10,
-    borderWidth: 1,
+  badge: {
     borderRadius: 999,
+    borderWidth: 1,
     paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingVertical: 4,
   },
-  upgradeBadgeText: {
+  badgeText: {
     fontSize: 11,
-    fontWeight: "600",
   },
 
   // SECTIONS
   section: {
-    marginTop: 12,
+    marginTop: 10,
   },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: "600",
-    marginBottom: 6,
-  },
-  sectionBody: {
+  sectionText: {
     fontSize: 12,
     lineHeight: 18,
-    marginTop: 2,
   },
-  bulletRow: {
+
+  // PROCESSING
+  processingRow: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    marginTop: 4,
-  },
-  bulletDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 999,
+    alignItems: "center",
     marginTop: 6,
-    marginRight: 8,
+    gap: 6,
   },
-  bulletText: {
-    flex: 1,
+  processingText: {
     fontSize: 12,
-    lineHeight: 18,
   },
 
-  sectionHintTitle: {
-    fontSize: 12,
-    fontWeight: "600",
-    marginBottom: 2,
-  },
-  sectionHintText: {
-    fontSize: 11,
-    lineHeight: 16,
-  },
-
-  // BOTTOM BAR
-  bottomBar: {
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: Platform.OS === "ios" ? 20 : 16,
-    borderTopWidth: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  bottomTextCol: {
-    flex: 1,
-  },
-  bottomTitle: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  bottomSubtitle: {
-    fontSize: 11,
-    marginTop: 2,
-  },
-  bottomButtons: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  laterBtn: {
+  // SECONDARY
+  secondaryBtn: {
     borderRadius: 999,
     borderWidth: 1,
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     paddingVertical: 8,
+    alignItems: "center",
+    marginBottom: 4,
   },
-  laterText: {
-    fontSize: 11,
+  secondaryText: {
+    fontSize: 12,
+    fontWeight: "500",
   },
-  primaryBtn: {
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    justifyContent: "center",
+  linkBtn: {
+    paddingVertical: 4,
     alignItems: "center",
   },
-  primaryText: {
-    color: "#020617",
+  linkText: {
     fontSize: 12,
-    fontWeight: "700",
+    textDecorationLine: "underline",
+  },
+
+  // ERROR
+  errorText: {
+    fontSize: 11,
+    marginTop: 4,
   },
 });
