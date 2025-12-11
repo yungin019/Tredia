@@ -136,6 +136,14 @@ const SubscriptionScreen: React.FC<SubscriptionScreenProps> = ({
           Pick how deep you want Tredia’s Super AI to work for you.
         </Text>
 
+        {/* 🔹 Compact tier hint line */}
+        <Text
+          style={[styles.tiersHint, { color: theme.textSoft }]}
+          numberOfLines={1}
+        >
+          FREE · 10/day — PRO · 100/day — ELITE · ∞
+        </Text>
+
         {userPlan && (
           <View style={styles.currentPlanWrapper}>
             {/* GlowView without intensity prop (uses default) */}
@@ -392,6 +400,11 @@ const styles = StyleSheet.create({
   subtitle: {
     marginTop: 4,
     fontSize: 13,
+  },
+  tiersHint: {
+    marginTop: 4,
+    fontSize: 11,
+    fontWeight: "500",
   },
   currentPlanWrapper: {
     marginTop: 10,

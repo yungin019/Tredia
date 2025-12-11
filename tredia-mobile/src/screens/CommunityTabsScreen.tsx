@@ -1,44 +1,87 @@
 // src/navigation/CommunityTabsScreen.tsx
 import React from "react";
+import { View } from "react-native";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 import { useTheme } from "../context/ThemeContext";
 
-import CommunityFeedScreen from "../screens/CommunityFeedScreen";
-import LiveActivityScreen from "../screens/LiveActivityScreen";
+// Community screens
+import CommunityScreen from "../screens/LiveActivityScreen";
 import CreatorsScreen from "../screens/CreatorsScreen";
 import LeaderboardScreen from "../screens/LeaderboardScreen";
 import RewardsScreen from "../screens/RewardsScreen";
 
-const TopTab = createMaterialTopTabNavigator();
+export type CommunityTopTabsParamList = {
+  Feed: undefined;
+  Creators: undefined;
+  Leaders: undefined; // renamed
+  Rewards: undefined;
+};
+
+const TopTab = createMaterialTopTabNavigator<CommunityTopTabsParamList>();
 
 export default function CommunityTabsScreen() {
   const theme: any = useTheme();
+  const insets = useSafeAreaInsets();
 
   return (
-    <TopTab.Navigator
-      screenOptions={{
-        tabBarStyle: {
-          backgroundColor: theme.background,
-          borderBottomWidth: 0.5,
-          borderColor: theme.cardBorder,
-        },
-        tabBarActiveTintColor: theme.accent,
-        tabBarInactiveTintColor: theme.textSoft,
-        tabBarIndicatorStyle: {
-          backgroundColor: theme.accent,
-          height: 3,
-        },
-        tabBarLabelStyle: {
-          fontWeight: "600",
-          fontSize: 13,
-        },
+    <View
+      style={{
+        flex: 1,
+        paddingTop: insets.top, // ⬅️ fixes high tabs
+        backgroundColor: theme.background,
       }}
     >
-      <TopTab.Screen name="Feed" component={CommunityFeedScreen} />
-      <TopTab.Screen name="Live" component={LiveActivityScreen} />
-      <TopTab.Screen name="Creators" component={CreatorsScreen} />
-      <TopTab.Screen name="Leaderboard" component={LeaderboardScreen} />
-      <TopTab.Screen name="Rewards" component={RewardsScreen} />
-    </TopTab.Navigator>
+      <TopTab.Navigator
+        screenOptions={{
+          tabBarStyle: {
+            backgroundColor: theme.background,
+            elevation: 0,
+            shadowOpacity: 0,
+            borderBottomWidth: 0,
+          },
+          tabBarIndicatorStyle: {
+            backgroundColor: theme.accent,
+            height: 3,
+          },
+          tabBarActiveTintColor: theme.textPrimary,
+          tabBarInactiveTintColor: theme.textSoft,
+          tabBarLabelStyle: {
+            fontSize: 14,
+            fontWeight: "600",
+            textTransform: "none",
+          },
+          tabBarItemStyle: {
+            paddingVertical: 4,
+          },
+        }}
+      >
+        <TopTab.Screen
+          name="Feed"
+          component={CommunityScreen as React.ComponentType<any>}
+          options={{ tabBarLabel: "Feed" }}
+        />
+
+        <TopTab.Screen
+          name="Creators"
+          component={CreatorsScreen as React.ComponentType<any>}
+          options={{ tabBarLabel: "Creators" }}
+        />
+
+        {/* Shorter label so it won’t cut */}
+        <TopTab.Screen
+          name="Leaders"
+          component={LeaderboardScreen as React.ComponentType<any>}
+          options={{ tabBarLabel: "Leaders" }}
+        />
+
+        <TopTab.Screen
+          name="Rewards"
+          component={RewardsScreen as React.ComponentType<any>}
+          options={{ tabBarLabel: "Rewards" }}
+        />
+      </TopTab.Navigator>
+    </View>
   );
 }

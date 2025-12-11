@@ -29,7 +29,7 @@ const CATEGORIES: { key: CategoryKey; label: string }[] = [
   { key: "stocks", label: "Stocks" },
   { key: "crypto", label: "Crypto" },
   { key: "forex", label: "Forex" },
-  { key: "metals", label: "Metals" },
+  { key: "metals", label: "Gold & Metals" },
   { key: "etf", label: "ETFs" },
 ];
 
@@ -72,7 +72,9 @@ const MarketExplorerScreen: React.FC = () => {
       ]);
 
       setBrief((briefRes as DailyBrief) || null);
-      setMovers(((moversRes as ExtendedMarketAsset[]) || []).map((m) => ({ ...m })));
+      setMovers(
+        ((moversRes as ExtendedMarketAsset[]) || []).map((m) => ({ ...m }))
+      );
       setTrending(
         ((trendingRes as ExtendedMarketAsset[]) || []).map((t) => ({ ...t }))
       );
@@ -98,7 +100,9 @@ const MarketExplorerScreen: React.FC = () => {
 
   const normalizeClass = (cls?: string | null) => (cls || "").toLowerCase();
 
-  const filterByCategory = (assets: ExtendedMarketAsset[]): ExtendedMarketAsset[] => {
+  const filterByCategory = (
+    assets: ExtendedMarketAsset[]
+  ): ExtendedMarketAsset[] => {
     if (category === "all") return assets;
 
     return assets.filter((a) => {
@@ -124,15 +128,26 @@ const MarketExplorerScreen: React.FC = () => {
     [trending, category]
   );
 
-  const topSpotlight = moversFiltered.slice(0, 4); // hero “AI Spotlight”
-  const listRest = moversFiltered.slice(4); // rest for “All movers”
+  // 🔥 Ensure ranking really matches “Ranked by absolute move”
+  const moversSorted = useMemo(
+    () =>
+      [...moversFiltered].sort(
+        (a, b) =>
+          Math.abs(b.changePct ?? 0) - Math.abs(a.changePct ?? 0)
+      ),
+    [moversFiltered]
+  );
+
+  const topSpotlight = moversSorted.slice(0, 4); // hero “AI Spotlight”
+  const listRest = moversSorted.slice(4); // rest for “All movers”
 
   const upColor = theme.success ?? theme.positive ?? theme.accent;
   const downColor = theme.danger ?? theme.negative ?? theme.accent;
 
   const briefText =
-    brief?.summary ??
-    "Once your data provider is live, this AI brief will explain where attention, volatility and flows are concentrating today.";
+    typeof brief?.summary === "string" && brief.summary.trim().length > 0
+      ? brief.summary
+      : "AI is watching live markets right now. As conditions change, this brief will highlight where attention, volatility and flows are concentrating today.";
 
   // -------- NAV HELPERS --------
 
@@ -190,7 +205,9 @@ const MarketExplorerScreen: React.FC = () => {
               { backgroundColor: theme.accent },
             ]}
           />
-          <Text style={[styles.liveText, { color: theme.accent }]}>AI LIVE</Text>
+          <Text style={[styles.liveText, { color: theme.accent }]}>
+            AI LIVE
+          </Text>
         </View>
       </View>
 
@@ -226,7 +243,9 @@ const MarketExplorerScreen: React.FC = () => {
               color={theme.accent}
               style={{ marginRight: 4 }}
             />
-            <Text style={[styles.briefAiButtonText, { color: theme.textSoft }]}>
+            <Text
+              style={[styles.briefAiButtonText, { color: theme.textSoft }]}
+            >
               Ask AI
             </Text>
           </TouchableOpacity>
@@ -483,7 +502,7 @@ const MarketExplorerScreen: React.FC = () => {
         </Text>
       </View>
 
-      {moversFiltered.length === 0 && !error && (
+      {moversSorted.length === 0 && !error && (
         <Text style={[styles.emptyText, { color: theme.textSoft }]}>
           No movers yet for this category.
         </Text>

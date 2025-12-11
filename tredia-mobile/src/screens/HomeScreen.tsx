@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useTheme } from "../context/ThemeContext";
 import {
@@ -51,6 +52,7 @@ const NEWS_PAGE_WIDTH = SCREEN_WIDTH - 40; // match card width
 export default function HomeScreen() {
   const theme: any = useTheme();
   const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
 
   const [loading, setLoading] = useState(true);
   const [brief, setBrief] = useState<BriefState>(null);
@@ -68,8 +70,8 @@ export default function HomeScreen() {
 
       const [b, m, t, dash] = await Promise.all([
         fetchDailyBrief(),
-        fetchMarketMovers(),
-        fetchTrending(),
+        fetchMarketMovers(), // now backed by live Polygon data
+        fetchTrending(), // live as well
         fetchAiDashboard().catch(() => null),
       ]);
 
@@ -105,7 +107,7 @@ export default function HomeScreen() {
 
       setLastUpdated(new Date());
 
-      // 3) Optional AI dashboard overlay
+      // 3) Optional AI dashboard overlay (only if it brings something better)
       const d: any = dash || {};
 
       // AI signals → override movers if present
@@ -134,7 +136,7 @@ export default function HomeScreen() {
         }));
       }
 
-      // Apply final lists (markets base + AI overlay if available)
+      // Apply final lists (live markets + AI overlay if available)
       setMovers(finalMovers);
       setTrending(finalTrending);
 
@@ -251,22 +253,21 @@ export default function HomeScreen() {
   };
 
   const openAssetDetail = (symbol?: string) => {
-  if (
-    !symbol ||
-    typeof symbol !== "string" ||
-    symbol.trim().length === 0
-  ) {
-    console.log(
-      "[Home] openAssetDetail called without valid symbol:",
-      symbol
-    );
-    return;
-  }
+    if (
+      !symbol ||
+      typeof symbol !== "string" ||
+      symbol.trim().length === 0
+    ) {
+      console.log(
+        "[Home] openAssetDetail called without valid symbol:",
+        symbol
+      );
+      return;
+    }
 
-  const rootNav = navigation.getParent?.() ?? navigation;
-  rootNav.navigate("AssetDetail", { symbol: symbol.trim() });
-};
-
+    const rootNav = navigation.getParent?.() ?? navigation;
+    rootNav.navigate("AssetDetail", { symbol: symbol.trim() });
+  };
 
   const openAIChat = (presetPrompt?: string) => {
     const rootNav = navigation.getParent?.() ?? navigation;
@@ -335,757 +336,601 @@ export default function HomeScreen() {
   return (
     <ScreenWrapper>
       <GradientBackground>
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={styles.container}
-          showsVerticalScrollIndicator={false}
+        <View
+          style={{
+            flex: 1,
+            paddingTop: insets.top + 8, // 👈 safe-area so header never hides
+          }}
         >
-          {/* HEADER */}
-          <View style={styles.headerRow}>
-            <View style={styles.headerLeft}>
-              <Image
-                source={require("../assets/tredia-icon.png")}
-                style={styles.logo}
-              />
-              <View>
-                <Text style={[styles.appTitle, { color: theme.textPrimary }]}>
-                  Tredia
-                </Text>
-                <Text
-                  style={[styles.appSubtitle, { color: theme.textSoft }]}
-                  numberOfLines={1}
-                >
-                  Your AI trading mentor
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.headerRight}>
-              <View
-                style={[
-                  styles.aiStatusPill,
-                  {
-                    backgroundColor: theme.surface,
-                    borderColor: theme.cardBorder,
-                  },
-                ]}
-              >
-                <Ionicons
-                  name="sparkles-outline"
-                  size={14}
-                  color={theme.accent}
-                />
-                <Text
-                  style={[styles.aiStatusText, { color: theme.textPrimary }]}
-                >
-                  AI Ready
-                </Text>
-              </View>
-
-              <TouchableOpacity
-                style={[
-                  styles.chatCircle,
-                  {
-                    backgroundColor: theme.surface,
-                    borderColor: theme.cardBorder,
-                  },
-                ]}
-                onPress={() => openAIChat()}
-              >
-                <Ionicons
-                  name="chatbubble-ellipses-outline"
-                  size={18}
-                  color={theme.accent}
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* HEADER STATS */}
-          <View
-            style={[
-              styles.headerStatsPill,
-              {
-                backgroundColor: theme.surface,
-                borderColor: theme.cardBorder,
-              },
-            ]}
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={styles.container}
+            showsVerticalScrollIndicator={false}
           >
-            <View style={styles.headerStatsDot} />
-            <Text
-              style={[styles.headerStatsText, { color: theme.textPrimary }]}
-              numberOfLines={1}
-            >
-              Today with Tredia · {headerStats.join(" · ")}
-            </Text>
-          </View>
+            {/* HEADER */}
+            <View style={styles.headerRow}>
+              <View style={styles.headerLeft}>
+                <Image
+                  source={require("../assets/tredia-icon.png")}
+                  style={styles.logo}
+                />
+                <View>
+                  <Text
+                    style={[styles.appTitle, { color: theme.textPrimary }]}
+                  >
+                    Tredia
+                  </Text>
+                  <Text
+                    style={[styles.appSubtitle, { color: theme.textSoft }]}
+                    numberOfLines={1}
+                  >
+                    Your AI trading mentor
+                  </Text>
+                </View>
+              </View>
 
-          {/* AI MARKET PULSE */}
-          <GlowView intensity="medium" radius={24} style={styles.briefGlow}>
+              <View style={styles.headerRight}>
+                <View
+                  style={[
+                    styles.aiStatusPill,
+                    {
+                      backgroundColor: theme.surface,
+                      borderColor: theme.cardBorder,
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name="sparkles-outline"
+                    size={14}
+                    color={theme.accent}
+                  />
+                  <Text
+                    style={[
+                      styles.aiStatusText,
+                      { color: theme.textPrimary },
+                    ]}
+                  >
+                    AI Ready
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  style={[
+                    styles.chatCircle,
+                    {
+                      backgroundColor: theme.surface,
+                      borderColor: theme.cardBorder,
+                    },
+                  ]}
+                  onPress={() => openAIChat()}
+                >
+                  <Ionicons
+                    name="chatbubble-ellipses-outline"
+                    size={18}
+                    color={theme.accent}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* HEADER STATS */}
             <View
               style={[
-                styles.briefCard,
+                styles.headerStatsPill,
                 {
                   backgroundColor: theme.surface,
                   borderColor: theme.cardBorder,
                 },
               ]}
             >
-              <View style={styles.briefHeaderRow}>
-                <View style={{ flex: 1, paddingRight: 8 }}>
-                  <Text style={[styles.briefLabel, { color: theme.accent }]}>
-                    AI Market Pulse
-                  </Text>
-                  <Text
-                    style={[
-                      styles.briefSubtitle,
-                      { color: theme.textSoft },
-                    ]}
-                  >
-                    Overview of what matters in today’s session
-                  </Text>
+              <View style={styles.headerStatsDot} />
+              <Text
+                style={[
+                  styles.headerStatsText,
+                  { color: theme.textPrimary },
+                ]}
+                numberOfLines={1}
+              >
+                Today with Tredia · {headerStats.join(" · ")}
+              </Text>
+            </View>
 
-                  <View style={styles.briefBadgesRow}>
-                    <View
-                      style={[
-                        styles.livePill,
-                        {
-                          borderColor: theme.accent,
-                          backgroundColor: theme.accentSoft,
-                        },
-                      ]}
-                    >
-                      <View
-                        style={[
-                          styles.liveDot,
-                          { backgroundColor: theme.accent },
-                        ]}
-                      />
-                      <Text
-                        style={[
-                          styles.livePillText,
-                          { color: theme.accent },
-                        ]}
-                      >
-                        LIVE
-                      </Text>
-                    </View>
-
-                    <View
-                      style={[
-                        styles.sentimentPill,
-                        {
-                          borderColor: sentimentColor,
-                          backgroundColor: sentimentColor + "20",
-                        },
-                      ]}
-                    >
-                      <Ionicons
-                        name="trending-up-outline"
-                        size={12}
-                        color={sentimentColor}
-                      />
-                      <Text
-                        style={[
-                          styles.sentimentText,
-                          { color: sentimentColor },
-                        ]}
-                        numberOfLines={1}
-                      >
-                        {sentimentLabel}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-
-                <View style={styles.briefMetaColumn}>
-                  <TouchableOpacity onPress={openAlerts}>
+            {/* AI MARKET PULSE */}
+            <GlowView intensity="medium" radius={24} style={styles.briefGlow}>
+              <View
+                style={[
+                  styles.briefCard,
+                  {
+                    backgroundColor: theme.surface,
+                    borderColor: theme.cardBorder,
+                  },
+                ]}
+              >
+                <View style={styles.briefHeaderRow}>
+                  <View style={{ flex: 1, paddingRight: 8 }}>
                     <Text
-                      style={[
-                        styles.viewAlertsLink,
-                        { color: theme.accent },
-                      ]}
+                      style={[styles.briefLabel, { color: theme.accent }]}
                     >
-                      View alerts →
+                      AI Market Pulse
                     </Text>
-                  </TouchableOpacity>
-
-                  <View style={styles.briefMetaRow}>
-                    <Ionicons
-                      name="time-outline"
-                      size={14}
-                      color={theme.textSoft}
-                    />
                     <Text
                       style={[
-                        styles.briefMetaText,
+                        styles.briefSubtitle,
                         { color: theme.textSoft },
                       ]}
                     >
-                      Updated {formatTime(lastUpdated)}
+                      Overview of what matters in today’s session
                     </Text>
+
+                    <View style={styles.briefBadgesRow}>
+                      <View
+                        style={[
+                          styles.livePill,
+                          {
+                            borderColor: theme.accent,
+                            backgroundColor: theme.accentSoft,
+                          },
+                        ]}
+                      >
+                        <View
+                          style={[
+                            styles.liveDot,
+                            { backgroundColor: theme.accent },
+                          ]}
+                        />
+                        <Text
+                          style={[
+                            styles.livePillText,
+                            { color: theme.accent },
+                          ]}
+                        >
+                          LIVE
+                        </Text>
+                      </View>
+
+                      <View
+                        style={[
+                          styles.sentimentPill,
+                          {
+                            borderColor: sentimentColor,
+                            backgroundColor: sentimentColor + "20",
+                          },
+                        ]}
+                      >
+                        <Ionicons
+                          name="trending-up-outline"
+                          size={12}
+                          color={sentimentColor}
+                        />
+                        <Text
+                          style={[
+                            styles.sentimentText,
+                            { color: sentimentColor },
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {sentimentLabel}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  <View style={styles.briefMetaColumn}>
+                    <TouchableOpacity onPress={openAlerts}>
+                      <Text
+                        style={[
+                          styles.viewAlertsLink,
+                          { color: theme.accent },
+                        ]}
+                      >
+                        View alerts →
+                      </Text>
+                    </TouchableOpacity>
+
+                    <View style={styles.briefMetaRow}>
+                      <Ionicons
+                        name="time-outline"
+                        size={14}
+                        color={theme.textSoft}
+                      />
+                      <Text
+                        style={[
+                          styles.briefMetaText,
+                          { color: theme.textSoft },
+                        ]}
+                      >
+                        Updated {formatTime(lastUpdated)}
+                      </Text>
+                    </View>
                   </View>
                 </View>
-              </View>
 
-              {loading ? (
-                <View style={styles.briefLoadingRow}>
-                  <ActivityIndicator size="small" color={theme.accent} />
-                  <Text
-                    style={[
-                      styles.briefLoadingText,
-                      { color: theme.textSoft },
-                    ]}
-                  >
-                    Loading AI brief…
-                  </Text>
-                </View>
-              ) : (
-                <>
-                  {briefTitle && (
+                {loading ? (
+                  <View style={styles.briefLoadingRow}>
+                    <ActivityIndicator size="small" color={theme.accent} />
                     <Text
                       style={[
-                        styles.briefTitle,
+                        styles.briefLoadingText,
+                        { color: theme.textSoft },
+                      ]}
+                    >
+                      Loading AI brief…
+                    </Text>
+                  </View>
+                ) : (
+                  <>
+                    {briefTitle && (
+                      <Text
+                        style={[
+                          styles.briefTitle,
+                          { color: theme.textPrimary },
+                        ]}
+                        numberOfLines={2}
+                      >
+                        {briefTitle}
+                      </Text>
+                    )}
+                    <Text
+                      style={[
+                        styles.briefText,
+                        { color: theme.textPrimary },
+                      ]}
+                      numberOfLines={4}
+                    >
+                      {briefText || fallbackBrief}
+                    </Text>
+                  </>
+                )}
+
+                <View style={styles.briefCTARow}>
+                  <TouchableOpacity
+                    style={[
+                      styles.primaryCTA,
+                      { backgroundColor: theme.accent },
+                    ]}
+                    onPress={() =>
+                      openAIChat(
+                        "Give me today’s market brief and key risks."
+                      )
+                    }
+                  >
+                    <Ionicons
+                      name="flash-outline"
+                      size={16}
+                      color={theme.onAccent ?? "#000"}
+                    />
+                    <Text
+                      style={[
+                        styles.primaryCTAText,
+                        { color: theme.onAccent ?? "#000" },
+                      ]}
+                      numberOfLines={2}
+                    >
+                      Ask AI about today
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.secondaryCTA,
+                      { borderColor: theme.cardBorder },
+                    ]}
+                    onPress={() =>
+                      openAIChat("Expand today’s market brief.")
+                    }
+                  >
+                    <Text
+                      style={[
+                        styles.secondaryCTAText,
                         { color: theme.textPrimary },
                       ]}
                       numberOfLines={2}
                     >
-                      {briefTitle}
+                      View full brief
                     </Text>
-                  )}
-                  <Text
-                    style={[styles.briefText, { color: theme.textPrimary }]}
-                    numberOfLines={4}
-                  >
-                    {briefText || fallbackBrief}
-                  </Text>
-                </>
-              )}
-
-              <View style={styles.briefCTARow}>
-                <TouchableOpacity
-                  style={[
-                    styles.primaryCTA,
-                    { backgroundColor: theme.accent },
-                  ]}
-                  onPress={() =>
-                    openAIChat("Give me today’s market brief and key risks.")
-                  }
-                >
-                  <Ionicons
-                    name="flash-outline"
-                    size={16}
-                    color={theme.onAccent ?? "#000"}
-                  />
-                  <Text
-                    style={[
-                      styles.primaryCTAText,
-                      { color: theme.onAccent ?? "#000" },
-                    ]}
-                    numberOfLines={2}
-                  >
-                    Ask AI about today
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[
-                    styles.secondaryCTA,
-                    { borderColor: theme.cardBorder },
-                  ]}
-                  onPress={() => openAIChat("Expand today’s market brief.")}
-                >
-                  <Text
-                    style={[
-                      styles.secondaryCTAText,
-                      { color: theme.textPrimary },
-                    ]}
-                    numberOfLines={2}
-                  >
-                    View full brief
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </GlowView>
-
-          {/* AI SIGNALS TODAY */}
-          <View style={styles.sectionHeaderRow}>
-            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
-              AI Signals Today
-            </Text>
-            <Text
-              style={[styles.sectionSubtitle, { color: theme.textSoft }]}
-              numberOfLines={1}
-            >
-              Counts based on today’s strongest moves
-            </Text>
-          </View>
-
-          <View style={styles.signalsRow}>
-            <View
-              style={[
-                styles.signalCard,
-                { backgroundColor: theme.surface },
-              ]}
-            >
-              <Text
-                style={[styles.signalLabel, { color: theme.textSoft }]}
-              >
-                Bullish cluster
-              </Text>
-              <Text
-                style={[styles.signalValueGreen, { color: theme.success }]}
-              >
-                {bullishCount} assets
-              </Text>
-            </View>
-
-            <View
-              style={[
-                styles.signalCard,
-                { backgroundColor: theme.surface },
-              ]}
-            >
-              <Text
-                style={[styles.signalLabel, { color: theme.textSoft }]}
-              >
-                Bearish pressure
-              </Text>
-              <Text
-                style={[styles.signalValueRed, { color: theme.danger }]}
-              >
-                {bearishCount} assets
-              </Text>
-            </View>
-
-            <View
-              style={[
-                styles.signalCard,
-                { backgroundColor: theme.surface },
-              ]}
-            >
-              <Text
-                style={[styles.signalLabel, { color: theme.textSoft }]}
-              >
-                Watchlist
-              </Text>
-              <Text
-                style={[styles.signalValueBlue, { color: theme.accent }]}
-              >
-                {watchlistCount} items
-              </Text>
-            </View>
-          </View>
-
-          {/* AI NEWS RADAR */}
-          <View style={styles.sectionHeaderRow}>
-            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
-              AI News Radar
-            </Text>
-            <Text style={[styles.sectionSubtitle, { color: theme.textSoft }]}>
-              Headlines your mentor is tracking
-            </Text>
-          </View>
-
-          <View style={styles.newsCarouselWrapper}>
-            {news.length === 0 ? (
-              <View
-                style={[
-                  styles.newsCard,
-                  {
-                    backgroundColor: theme.surface,
-                    borderColor: theme.cardBorder,
-                    width: SCREEN_WIDTH - 40,
-                  },
-                ]}
-              >
-                <View style={styles.newsTextBlock}>
-                  <Text
-                    style={[styles.newsTitle, { color: theme.textPrimary }]}
-                  >
-                    No headlines available
-                  </Text>
-                  <Text
-                    style={[styles.newsSummary, { color: theme.textSoft }]}
-                  >
-                    We couldn’t load news right now. Refresh the page or try
-                    again in a few minutes.
-                  </Text>
+                  </TouchableOpacity>
                 </View>
               </View>
-            ) : (
-              <>
-                <ScrollView
-                  ref={newsScrollRef}
-                  horizontal
-                  pagingEnabled
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.newsScrollContent}
-                  scrollEventThrottle={16}
-                  decelerationRate="fast"
-                  onScroll={(e) => {
-                    const x = e.nativeEvent.contentOffset.x;
-                    const idx = Math.round(x / NEWS_PAGE_WIDTH);
-                    if (idx !== newsIndex && idx >= 0 && idx < news.length) {
-                      setNewsIndex(idx);
-                    }
-                  }}
-                >
-                  {news.map((item) => (
-                    <TouchableOpacity
-                      key={`news-${item.id}`}
-                      activeOpacity={0.9}
-                      style={[
-                        styles.newsCard,
-                        {
-                          backgroundColor: theme.surface,
-                          borderColor: theme.cardBorder,
-                          width: SCREEN_WIDTH - 40,
-                        },
-                      ]}
-                      onPress={() => {
-                        if (item.url) {
-                          Linking.openURL(item.url).catch((err) =>
-                            console.log("Failed to open news url", err)
-                          );
-                        }
-                      }}
-                    >
-                      {item.imageUrl && (
-                        <Image
-                          source={{ uri: item.imageUrl }}
-                          style={styles.newsImage}
-                        />
-                      )}
+            </GlowView>
 
-                      <View style={styles.newsTextBlock}>
-                        <View style={styles.newsMetaRow}>
-                          {item.category && (
-                            <View
-                              style={[
-                                styles.newsCategoryPill,
-                                { backgroundColor: theme.accentSoft },
-                              ]}
-                            >
-                              <Text
-                                style={[
-                                  styles.newsCategoryText,
-                                  { color: theme.accent },
-                                ]}
-                              >
-                                {item.category.toUpperCase()}
-                              </Text>
-                            </View>
-                          )}
-                          {item.source && (
-                            <Text
-                              style={[
-                                styles.newsSource,
-                                { color: theme.textSoft },
-                              ]}
-                              numberOfLines={1}
-                            >
-                              {item.source}
-                            </Text>
-                          )}
-                        </View>
-
-                        <Text
-                          style={[
-                            styles.newsTitle,
-                            { color: theme.textPrimary },
-                          ]}
-                          numberOfLines={2}
-                        >
-                          {item.title}
-                        </Text>
-
-                        {item.summary && (
-                          <Text
-                            style={[
-                              styles.newsSummary,
-                              { color: theme.textSoft },
-                            ]}
-                            numberOfLines={3}
-                          >
-                            {item.summary}
-                          </Text>
-                        )}
-                      </View>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-
-                {news.length > 1 && (
-                  <View style={styles.newsDotsRow}>
-                    {news.map((n, index) => (
-                      <View
-                        key={`dot-${n.id}-${index}`}
-                        style={[
-                          styles.newsDot,
-                          {
-                            backgroundColor:
-                              index === newsIndex
-                                ? theme.accent
-                                : theme.accentSoft,
-                          },
-                        ]}
-                      />
-                    ))}
-                  </View>
-                )}
-              </>
-            )}
-          </View>
-
-          {/* MINI WATCHLIST */}
-          <View style={styles.sectionHeaderRow}>
-            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
-              Mini Watchlist
-            </Text>
-            <Text
-              style={[styles.sectionSubtitle, { color: theme.textSoft }]}
-            >
-              Snapshot of key symbols
-            </Text>
-          </View>
-
-          {miniWatchlist.length === 0 ? (
-            <Text style={[styles.emptyText, { color: theme.textSoft }]}>
-              No symbols to display right now.
-            </Text>
-          ) : (
-            <View style={styles.watchlistGrid}>
-              {miniWatchlist.map((asset, index) => (
-                <TouchableOpacity
-                  key={`wl-${asset.symbol || "asset"}-${index}`}
-                  style={[
-                    styles.watchlistItem,
-                    { backgroundColor: theme.surface },
-                  ]}
-                  onPress={() => openAssetDetail(asset.symbol)}
-                >
-                  <Text
-                    style={[
-                      styles.watchlistSymbol,
-                      { color: theme.textPrimary },
-                    ]}
-                  >
-                    {asset.symbol || "—"}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.watchlistChange,
-                      {
-                        color:
-                          asset.changePct >= 0
-                            ? theme.success
-                            : theme.danger,
-                      },
-                    ]}
-                  >
-                    {asset.changePct >= 0 ? "+" : ""}
-                    {asset.changePct.toFixed(2)}%
-                  </Text>
-                </TouchableOpacity>
-              ))}
+            {/* AI SIGNALS TODAY */}
+            <View style={styles.sectionHeaderRow}>
+              <Text
+                style={[styles.sectionTitle, { color: theme.textPrimary }]}
+              >
+                AI Signals Today
+              </Text>
+              <Text
+                style={[
+                  styles.sectionSubtitle,
+                  { color: theme.textSoft },
+                ]}
+                numberOfLines={1}
+              >
+                Counts based on today’s strongest moves
+              </Text>
             </View>
-          )}
 
-          {/* AI SPOTLIGHT */}
-          {spotlight.length > 0 && (
-            <>
-              <View style={styles.sectionHeaderRow}>
+            <View style={styles.signalsRow}>
+              <View
+                style={[
+                  styles.signalCard,
+                  { backgroundColor: theme.surface },
+                ]}
+              >
                 <Text
-                  style={[styles.sectionTitle, { color: theme.textPrimary }]}
+                  style={[styles.signalLabel, { color: theme.textSoft }]}
                 >
-                  AI Spotlight
+                  Bullish cluster
                 </Text>
                 <Text
-                  style={[styles.sectionSubtitle, { color: theme.textSoft }]}
+                  style={[
+                    styles.signalValueGreen,
+                    { color: theme.success },
+                  ]}
                 >
-                  Strongest movers in your universe
+                  {bullishCount} assets
                 </Text>
               </View>
 
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.spotlightScroll}
+              <View
+                style={[
+                  styles.signalCard,
+                  { backgroundColor: theme.surface },
+                ]}
               >
-                {spotlight.map((item, index) => {
-                  const isUp = item.changePct >= 0;
-                  const direction = isUp ? "Bullish" : "Bearish";
+                <Text
+                  style={[styles.signalLabel, { color: theme.textSoft }]}
+                >
+                  Bearish pressure
+                </Text>
+                <Text
+                  style={[
+                    styles.signalValueRed,
+                    { color: theme.danger },
+                  ]}
+                >
+                  {bearishCount} assets
+                </Text>
+              </View>
 
-                  const thesisText = isUp
-                    ? "Upside momentum with supportive trend structure."
-                    : "Downside pressure with elevated volatility.";
+              <View
+                style={[
+                  styles.signalCard,
+                  { backgroundColor: theme.surface },
+                ]}
+              >
+                <Text
+                  style={[styles.signalLabel, { color: theme.textSoft }]}
+                >
+                  Watchlist
+                </Text>
+                <Text
+                  style={[
+                    styles.signalValueBlue,
+                    { color: theme.accent },
+                  ]}
+                >
+                  {watchlistCount} items
+                </Text>
+              </View>
+            </View>
 
-                  const riskText = isUp
-                    ? "Watch for exhaustion if momentum fades."
-                    : "Risk of sharp short-covering if sentiment flips.";
+            {/* AI NEWS RADAR */}
+            <View style={styles.sectionHeaderRow}>
+              <Text
+                style={[styles.sectionTitle, { color: theme.textPrimary }]}
+              >
+                AI News Radar
+              </Text>
+              <Text
+                style={[
+                  styles.sectionSubtitle,
+                  { color: theme.textSoft },
+                ]}
+              >
+                Headlines your mentor is tracking
+              </Text>
+            </View>
 
-                  return (
-                    <View
-                      key={`spot-${item.symbol || "asset"}-${index}`}
-                      style={styles.spotlightCardWrapper}
+            <View style={styles.newsCarouselWrapper}>
+              {news.length === 0 ? (
+                <View
+                  style={[
+                    styles.newsCard,
+                    {
+                      backgroundColor: theme.surface,
+                      borderColor: theme.cardBorder,
+                      width: SCREEN_WIDTH - 40,
+                    },
+                  ]}
+                >
+                  <View style={styles.newsTextBlock}>
+                    <Text
+                      style={[
+                        styles.newsTitle,
+                        { color: theme.textPrimary },
+                      ]}
                     >
-                      <GlowView intensity="soft" radius={22}>
-                        <TouchableOpacity
-                          style={[
-                            styles.spotlightCard,
-                            {
-                              backgroundColor: theme.surface,
-                              borderColor: theme.cardBorder,
-                            },
-                          ]}
-                          onPress={() => openAssetDetail(item.symbol)}
-                        >
-                          <View style={styles.spotlightTopRow}>
-                            <View>
-                              <Text
+                      No headlines available
+                    </Text>
+                    <Text
+                      style={[
+                        styles.newsSummary,
+                        { color: theme.textSoft },
+                      ]}
+                    >
+                      We couldn’t load news right now. Refresh the page or
+                      try again in a few minutes.
+                    </Text>
+                  </View>
+                </View>
+              ) : (
+                <>
+                  <ScrollView
+                    ref={newsScrollRef}
+                    horizontal
+                    pagingEnabled
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.newsScrollContent}
+                    scrollEventThrottle={16}
+                    decelerationRate="fast"
+                    onScroll={(e) => {
+                      const x = e.nativeEvent.contentOffset.x;
+                      const idx = Math.round(x / NEWS_PAGE_WIDTH);
+                      if (
+                        idx !== newsIndex &&
+                        idx >= 0 &&
+                        idx < news.length
+                      ) {
+                        setNewsIndex(idx);
+                      }
+                    }}
+                  >
+                    {news.map((item) => (
+                      <TouchableOpacity
+                        key={`news-${item.id}`}
+                        activeOpacity={0.9}
+                        style={[
+                          styles.newsCard,
+                          {
+                            backgroundColor: theme.surface,
+                            borderColor: theme.cardBorder,
+                            width: SCREEN_WIDTH - 40,
+                          },
+                        ]}
+                        onPress={() => {
+                          if (item.url) {
+                            Linking.openURL(item.url).catch((err) =>
+                              console.log("Failed to open news url", err)
+                            );
+                          }
+                        }}
+                      >
+                        {item.imageUrl && (
+                          <Image
+                            source={{ uri: item.imageUrl }}
+                            style={styles.newsImage}
+                          />
+                        )}
+
+                        <View style={styles.newsTextBlock}>
+                          <View style={styles.newsMetaRow}>
+                            {item.category && (
+                              <View
                                 style={[
-                                  styles.spotSymbol,
-                                  { color: theme.textPrimary },
+                                  styles.newsCategoryPill,
+                                  { backgroundColor: theme.accentSoft },
                                 ]}
                               >
-                                {item.symbol || "—"}
-                              </Text>
+                                <Text
+                                  style={[
+                                    styles.newsCategoryText,
+                                    { color: theme.accent },
+                                  ]}
+                                >
+                                  {item.category.toUpperCase()}
+                                </Text>
+                              </View>
+                            )}
+                            {item.source && (
                               <Text
                                 style={[
-                                  styles.spotName,
+                                  styles.newsSource,
                                   { color: theme.textSoft },
                                 ]}
                                 numberOfLines={1}
                               >
-                                {item.name}
+                                {item.source}
                               </Text>
-                            </View>
-
-                            <View
-                              style={[
-                                styles.directionPill,
-                                {
-                                  backgroundColor: (isUp
-                                    ? theme.success
-                                    : theme.danger) + "20",
-                                  borderColor: isUp
-                                    ? theme.success
-                                    : theme.danger,
-                                },
-                              ]}
-                            >
-                              <Text
-                                style={[
-                                  styles.directionPillText,
-                                  {
-                                    color: isUp
-                                      ? theme.success
-                                      : theme.danger,
-                                  },
-                                ]}
-                              >
-                                {direction}
-                              </Text>
-                            </View>
-                          </View>
-
-                          <View style={styles.spotChangeRow}>
-                            <Text
-                              style={[
-                                styles.spotChange,
-                                {
-                                  color: isUp
-                                    ? theme.success
-                                    : theme.danger,
-                                },
-                              ]}
-                            >
-                              {isUp ? "+" : ""}
-                              {item.changePct.toFixed(2)}%
-                            </Text>
-                            <Text
-                              style={[
-                                styles.spotChangeLabel,
-                                { color: theme.textSoft },
-                              ]}
-                            >
-                              Today
-                            </Text>
-                          </View>
-
-                          <View style={styles.spotSparklineWrapper}>
-                            <MiniSparkline
-                              data={item.sparkline || []}
-                              strokeColor={
-                                isUp ? theme.success : theme.danger
-                              }
-                              width={110}
-                              height={40}
-                            />
+                            )}
                           </View>
 
                           <Text
                             style={[
-                              styles.spotThesis,
+                              styles.newsTitle,
                               { color: theme.textPrimary },
                             ]}
                             numberOfLines={2}
                           >
-                            {thesisText}
+                            {item.title}
                           </Text>
-                          <Text
-                            style={[
-                              styles.spotRisk,
-                              { color: theme.textSoft },
-                            ]}
-                            numberOfLines={2}
-                          >
-                            Risk: {riskText}
-                          </Text>
-                        </TouchableOpacity>
-                      </GlowView>
+
+                          {item.summary && (
+                            <Text
+                              style={[
+                                styles.newsSummary,
+                                { color: theme.textSoft },
+                              ]}
+                              numberOfLines={3}
+                            >
+                              {item.summary}
+                            </Text>
+                          )}
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+
+                  {news.length > 1 && (
+                    <View style={styles.newsDotsRow}>
+                      {news.map((n, index) => (
+                        <View
+                          key={`dot-${n.id}-${index}`}
+                          style={[
+                            styles.newsDot,
+                            {
+                              backgroundColor:
+                                index === newsIndex
+                                  ? theme.accent
+                                  : theme.accentSoft,
+                            },
+                          ]}
+                        />
+                      ))}
                     </View>
-                  );
-                })}
-              </ScrollView>
-            </>
-          )}
+                  )}
+                </>
+              )}
+            </View>
 
-          {/* TRENDING */}
-          <View style={styles.sectionHeaderRow}>
-            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
-              Trending Now
-            </Text>
-          </View>
+            {/* MINI WATCHLIST */}
+            <View style={styles.sectionHeaderRow}>
+              <Text
+                style={[styles.sectionTitle, { color: theme.textPrimary }]}
+              >
+                Mini Watchlist
+              </Text>
+              <Text
+                style={[
+                  styles.sectionSubtitle,
+                  { color: theme.textSoft },
+                ]}
+              >
+                Snapshot of key symbols
+              </Text>
+            </View>
 
-          {trendingList.length === 0 ? (
-            <Text style={[styles.emptyText, { color: theme.textSoft }]}>
-              No trending symbols to show right now.
-            </Text>
-          ) : (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.trendingScroll}
-            >
-              {trendingList.map((asset, index) => (
-                <TouchableOpacity
-                  key={`trend-${asset.symbol || "asset"}-${index}`}
-                  style={[
-                    styles.trendingCard,
-                    {
-                      backgroundColor: theme.surface,
-                      borderColor: theme.cardBorder,
-                    },
-                  ]}
-                  onPress={() => openAssetDetail(asset.symbol)}
-                >
-                  <View style={styles.trendTopRow}>
+            {miniWatchlist.length === 0 ? (
+              <Text
+                style={[styles.emptyText, { color: theme.textSoft }]}
+              >
+                No symbols to display right now.
+              </Text>
+            ) : (
+              <View style={styles.watchlistGrid}>
+                {miniWatchlist.map((asset, index) => (
+                  <TouchableOpacity
+                    key={`wl-${asset.symbol || "asset"}-${index}`}
+                    style={[
+                      styles.watchlistItem,
+                      { backgroundColor: theme.surface },
+                    ]}
+                    onPress={() => openAssetDetail(asset.symbol)}
+                  >
                     <Text
                       style={[
-                        styles.trendSymbol,
+                        styles.watchlistSymbol,
                         { color: theme.textPrimary },
                       ]}
                     >
@@ -1093,7 +938,7 @@ export default function HomeScreen() {
                     </Text>
                     <Text
                       style={[
-                        styles.trendChange,
+                        styles.watchlistChange,
                         {
                           color:
                             asset.changePct >= 0
@@ -1105,131 +950,378 @@ export default function HomeScreen() {
                       {asset.changePct >= 0 ? "+" : ""}
                       {asset.changePct.toFixed(2)}%
                     </Text>
-                  </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
 
-                  <MiniSparkline
-                    data={asset.sparkline || []}
-                    strokeColor={
-                      asset.changePct >= 0
-                        ? theme.success
-                        : theme.danger
-                    }
-                    width={110}
-                    height={40}
-                  />
-
+            {/* AI SPOTLIGHT */}
+            {spotlight.length > 0 && (
+              <>
+                <View style={styles.sectionHeaderRow}>
                   <Text
-                    style={[styles.trendName, { color: theme.textSoft }]}
-                    numberOfLines={1}
+                    style={[
+                      styles.sectionTitle,
+                      { color: theme.textPrimary },
+                    ]}
                   >
-                    {asset.name}
+                    AI Spotlight
+                  </Text>
+                  <Text
+                    style={[
+                      styles.sectionSubtitle,
+                      { color: theme.textSoft },
+                    ]}
+                  >
+                    Strongest movers in your universe
+                  </Text>
+                </View>
+
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.spotlightScroll}
+                >
+                  {spotlight.map((item, index) => {
+                    const isUp = item.changePct >= 0;
+                    const direction = isUp ? "Bullish" : "Bearish";
+
+                    const thesisText = isUp
+                      ? "Upside momentum with supportive trend structure."
+                      : "Downside pressure with elevated volatility.";
+
+                    const riskText = isUp
+                      ? "Watch for exhaustion if momentum fades."
+                      : "Risk of sharp short-covering if sentiment flips.";
+
+                    return (
+                      <View
+                        key={`spot-${item.symbol || "asset"}-${index}`}
+                        style={styles.spotlightCardWrapper}
+                      >
+                        <GlowView intensity="soft" radius={22}>
+                          <TouchableOpacity
+                            style={[
+                              styles.spotlightCard,
+                              {
+                                backgroundColor: theme.surface,
+                                borderColor: theme.cardBorder,
+                              },
+                            ]}
+                            onPress={() => openAssetDetail(item.symbol)}
+                          >
+                            <View style={styles.spotlightTopRow}>
+                              <View>
+                                <Text
+                                  style={[
+                                    styles.spotSymbol,
+                                    { color: theme.textPrimary },
+                                  ]}
+                                >
+                                  {item.symbol || "—"}
+                                </Text>
+                                <Text
+                                  style={[
+                                    styles.spotName,
+                                    { color: theme.textSoft },
+                                  ]}
+                                  numberOfLines={1}
+                                >
+                                  {item.name}
+                                </Text>
+                              </View>
+
+                              <View
+                                style={[
+                                  styles.directionPill,
+                                  {
+                                    backgroundColor: (isUp
+                                      ? theme.success
+                                      : theme.danger) + "20",
+                                    borderColor: isUp
+                                      ? theme.success
+                                      : theme.danger,
+                                  },
+                                ]}
+                              >
+                                <Text
+                                  style={[
+                                    styles.directionPillText,
+                                    {
+                                      color: isUp
+                                        ? theme.success
+                                        : theme.danger,
+                                    },
+                                  ]}
+                                >
+                                  {direction}
+                                </Text>
+                              </View>
+                            </View>
+
+                            <View style={styles.spotChangeRow}>
+                              <Text
+                                style={[
+                                  styles.spotChange,
+                                  {
+                                    color: isUp
+                                      ? theme.success
+                                      : theme.danger,
+                                  },
+                                ]}
+                              >
+                                {isUp ? "+" : ""}
+                                {item.changePct.toFixed(2)}%
+                              </Text>
+                              <Text
+                                style={[
+                                  styles.spotChangeLabel,
+                                  { color: theme.textSoft },
+                                ]}
+                              >
+                                Today
+                              </Text>
+                            </View>
+
+                            <View style={styles.spotSparklineWrapper}>
+                              <MiniSparkline
+                                data={item.sparkline || []}
+                                strokeColor={
+                                  isUp ? theme.success : theme.danger
+                                }
+                                width={110}
+                                height={40}
+                              />
+                            </View>
+
+                            <Text
+                              style={[
+                                styles.spotThesis,
+                                { color: theme.textPrimary },
+                              ]}
+                              numberOfLines={2}
+                            >
+                              {thesisText}
+                            </Text>
+                            <Text
+                              style={[
+                                styles.spotRisk,
+                                { color: theme.textSoft },
+                              ]}
+                              numberOfLines={2}
+                            >
+                              Risk: {riskText}
+                            </Text>
+                          </TouchableOpacity>
+                        </GlowView>
+                      </View>
+                    );
+                  })}
+                </ScrollView>
+              </>
+            )}
+
+            {/* TRENDING */}
+            <View style={styles.sectionHeaderRow}>
+              <Text
+                style={[styles.sectionTitle, { color: theme.textPrimary }]}
+              >
+                Trending Now
+              </Text>
+            </View>
+
+            {trendingList.length === 0 ? (
+              <Text
+                style={[styles.emptyText, { color: theme.textSoft }]}
+              >
+                No trending symbols to show right now.
+              </Text>
+            ) : (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.trendingScroll}
+              >
+                {trendingList.map((asset, index) => (
+                  <TouchableOpacity
+                    key={`trend-${asset.symbol || "asset"}-${index}`}
+                    style={[
+                      styles.trendingCard,
+                      {
+                        backgroundColor: theme.surface,
+                        borderColor: theme.cardBorder,
+                      },
+                    ]}
+                    onPress={() => openAssetDetail(asset.symbol)}
+                  >
+                    <View style={styles.trendTopRow}>
+                      <Text
+                        style={[
+                          styles.trendSymbol,
+                          { color: theme.textPrimary },
+                        ]}
+                      >
+                        {asset.symbol || "—"}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.trendChange,
+                          {
+                            color:
+                              asset.changePct >= 0
+                                ? theme.success
+                                : theme.danger,
+                          },
+                        ]}
+                      >
+                        {asset.changePct >= 0 ? "+" : ""}
+                        {asset.changePct.toFixed(2)}%
+                      </Text>
+                    </View>
+
+                    <MiniSparkline
+                      data={asset.sparkline || []}
+                      strokeColor={
+                        asset.changePct >= 0
+                          ? theme.success
+                          : theme.danger
+                      }
+                      width={110}
+                      height={40}
+                    />
+
+                    <Text
+                      style={[
+                        styles.trendName,
+                        { color: theme.textSoft },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {asset.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
+
+            {/* COMMUNITY */}
+            <View style={styles.sectionHeaderRow}>
+              <Text
+                style={[styles.sectionTitle, { color: theme.textPrimary }]}
+              >
+                Community Pulse
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={[
+                styles.communityCard,
+                {
+                  backgroundColor: theme.surface,
+                  borderColor: theme.cardBorder,
+                },
+              ]}
+              onPress={() => navigation.navigate("Planet")}
+              activeOpacity={0.9}
+            >
+              <Ionicons
+                name="people-outline"
+                size={22}
+                color={theme.accent}
+              />
+              <Text
+                style={[
+                  styles.communityText,
+                  { color: theme.textPrimary },
+                ]}
+                numberOfLines={2}
+              >
+                See what traders are focusing on today →
+              </Text>
+            </TouchableOpacity>
+
+            {/* QUICK ACTIONS */}
+            <View style={styles.sectionHeaderRow}>
+              <Text
+                style={[styles.sectionTitle, { color: theme.textPrimary }]}
+              >
+                Quick Actions
+              </Text>
+            </View>
+
+            <GlowView intensity="soft" radius={20} style={styles.quickGlow}>
+              <View style={styles.quickRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.quickButton,
+                    { backgroundColor: theme.surface },
+                  ]}
+                  onPress={() => openAIChat()}
+                >
+                  <Ionicons
+                    name="chatbubble-ellipses-outline"
+                    size={20}
+                    color={theme.accent}
+                  />
+                  <Text
+                    style={[
+                      styles.quickText,
+                      { color: theme.textPrimary },
+                    ]}
+                  >
+                    Ask AI
                   </Text>
                 </TouchableOpacity>
-              ))}
-            </ScrollView>
-          )}
 
-          {/* COMMUNITY */}
-          <View style={styles.sectionHeaderRow}>
-            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
-              Community Pulse
-            </Text>
-          </View>
-
-          <TouchableOpacity
-            style={[
-              styles.communityCard,
-              {
-                backgroundColor: theme.surface,
-                borderColor: theme.cardBorder,
-              },
-            ]}
-            onPress={() => navigation.navigate("Planet")}
-            activeOpacity={0.9}
-          >
-            <Ionicons
-              name="people-outline"
-              size={22}
-              color={theme.accent}
-            />
-            <Text
-              style={[styles.communityText, { color: theme.textPrimary }]}
-              numberOfLines={2}
-            >
-              See what traders are focusing on today →
-            </Text>
-          </TouchableOpacity>
-
-          {/* QUICK ACTIONS */}
-          <View style={styles.sectionHeaderRow}>
-            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
-              Quick Actions
-            </Text>
-          </View>
-
-          <GlowView intensity="soft" radius={20} style={styles.quickGlow}>
-            <View style={styles.quickRow}>
-              <TouchableOpacity
-                style={[
-                  styles.quickButton,
-                  { backgroundColor: theme.surface },
-                ]}
-                onPress={() => openAIChat()}
-              >
-                <Ionicons
-                  name="chatbubble-ellipses-outline"
-                  size={20}
-                  color={theme.accent}
-                />
-                <Text
-                  style={[styles.quickText, { color: theme.textPrimary }]}
+                <TouchableOpacity
+                  style={[
+                    styles.quickButton,
+                    { backgroundColor: theme.surface },
+                  ]}
+                  onPress={openAlerts}
                 >
-                  Ask AI
-                </Text>
-              </TouchableOpacity>
+                  <Ionicons
+                    name="notifications-outline"
+                    size={20}
+                    color={theme.accent}
+                  />
+                  <Text
+                    style={[
+                      styles.quickText,
+                      { color: theme.textPrimary },
+                    ]}
+                  >
+                    Alerts
+                  </Text>
+                </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[
-                  styles.quickButton,
-                  { backgroundColor: theme.surface },
-                ]}
-                onPress={openAlerts}
-              >
-                <Ionicons
-                  name="notifications-outline"
-                  size={20}
-                  color={theme.accent}
-                />
-                <Text
-                  style={[styles.quickText, { color: theme.textPrimary }]}
+                <TouchableOpacity
+                  style={[
+                    styles.quickButton,
+                    { backgroundColor: theme.surface },
+                  ]}
+                  onPress={() => navigation.navigate("Portfolio")}
                 >
-                  Alerts
-                </Text>
-              </TouchableOpacity>
+                  <Ionicons
+                    name="pie-chart-outline"
+                    size={20}
+                    color={theme.accent}
+                  />
+                  <Text
+                    style={[
+                      styles.quickText,
+                      { color: theme.textPrimary },
+                    ]}
+                  >
+                    Portfolio
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </GlowView>
 
-              <TouchableOpacity
-                style={[
-                  styles.quickButton,
-                  { backgroundColor: theme.surface },
-                ]}
-                onPress={() => navigation.navigate("Portfolio")}
-              >
-                <Ionicons
-                  name="pie-chart-outline"
-                  size={20}
-                  color={theme.accent}
-                />
-                <Text
-                  style={[styles.quickText, { color: theme.textPrimary }]}
-                >
-                  Portfolio
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </GlowView>
-
-          <View style={{ height: 40 }} />
-        </ScrollView>
+            <View style={{ height: 40 }} />
+          </ScrollView>
+        </View>
       </GradientBackground>
     </ScreenWrapper>
   );
