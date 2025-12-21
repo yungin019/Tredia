@@ -2,10 +2,12 @@
 "use client";
 
 import React from "react";
+import RequestState from "@/components/ui/RequestState";
 import MiniSparkline from "@/components/charts/MiniSparkline";
-import { chartTheme } from "@/components/charts/theme";
+import Disclaimer from "@/components/ui/Disclaimer";
 
-
+const toValueSeries = (arr: number[] | null | undefined) =>
+  (arr ?? []).map((value) => ({ value }));
 
 const mockMomentum = [101, 103, 99, 104, 110, 108, 112, 118, 117, 121];
 const mockCrypto = [1.01, 1.03, 1.08, 1.04, 1.12, 1.18, 1.23, 1.19];
@@ -64,10 +66,9 @@ const mockNews = [
 
 export default function FeedPage() {
   return (
-    <main className="min-h-screen bg-[#050712] text-white">
-      {/* Max width shell */}
+    <RequestState>
+      <main className="min-h-screen bg-[#050712] text-white">
       <div className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-4 pb-8 pt-6 md:px-6 lg:px-8">
-        {/* Top header */}
         <header className="flex items-center justify-between gap-4">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-white/8 bg-white/5 px-3 py-1">
@@ -84,18 +85,14 @@ export default function FeedPage() {
             </p>
           </div>
 
-          {/* Quick KPIs */}
           <div className="flex shrink-0 gap-3">
             <KpiPill label="AI Confidence" value="82%" tone="good" />
             <KpiPill label="Market Mood" value="Risk-on" tone="neutral" />
           </div>
         </header>
 
-        {/* GRID LAYOUT */}
         <div className="grid flex-1 grid-cols-1 gap-4 md:grid-cols-5 lg:gap-5">
-          {/* LEFT COLUMN */}
           <section className="flex flex-col gap-4 md:col-span-3">
-            {/* AI DAILY BRIEF */}
             <div className="relative overflow-hidden rounded-3xl border border-white/8 bg-gradient-to-br from-white/[0.06] via-[#0d1322] to-[#020511] p-4 md:p-5">
               <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-cyan-400/10 blur-3xl" />
               <div className="pointer-events-none absolute -bottom-16 -left-8 h-40 w-40 rounded-full bg-emerald-400/10 blur-3xl" />
@@ -105,7 +102,7 @@ export default function FeedPage() {
                   <h2 className="text-[15px] font-semibold md:text-[16px]">
                     Today&apos;s AI briefing
                   </h2>
-                  <p className="mt-1 text-xs leading-relaxed text-slate-300">
+                    <p className="mt-1 text-xs leading-relaxed text-slate-300">
                     Super AI is tracking strong flows into{" "}
                     <span className="font-semibold text-emerald-400">
                       AI chips
@@ -115,12 +112,13 @@ export default function FeedPage() {
                       large-cap tech
                     </span>
                     , while{" "}
-                    <span className="font-semibold text-red-300">
-                      energy
-                    </span>{" "}
+                    <span className="font-semibold text-red-300">energy</span>{" "}
                     shows early signs of cooling. Short-term volatility is
                     clustering around semiconductors and BTC.
                   </p>
+                  <div className="mt-2">
+                    <Disclaimer />
+                  </div>
                 </div>
 
                 <span className="rounded-full bg-black/30 px-3 py-1 text-[10px] font-medium text-slate-200 ring-1 ring-white/10">
@@ -128,7 +126,6 @@ export default function FeedPage() {
                 </span>
               </div>
 
-              {/* Momentum strip */}
               <div className="mt-4 grid gap-3 md:grid-cols-3">
                 <MomentumCard
                   title="AI Momentum Index"
@@ -154,7 +151,6 @@ export default function FeedPage() {
               </div>
             </div>
 
-            {/* NEXT BIG JUMPS */}
             <div className="rounded-3xl border border-white/7 bg-[#0B0F17] p-4 md:p-5">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
@@ -211,13 +207,9 @@ export default function FeedPage() {
                         </span>
                       </div>
 
-                      <MiniSparkline
-                        data={item.data}
-                        positive={item.positive}
-                        width={120}
-                        height={34}
-                        className="hidden md:block"
-                      />
+                      <div className="hidden md:block">
+                        <MiniSparkline data={toValueSeries(item.data)} />
+                      </div>
                     </div>
                   </button>
                 ))}
@@ -225,9 +217,7 @@ export default function FeedPage() {
             </div>
           </section>
 
-          {/* RIGHT COLUMN */}
           <section className="flex flex-col gap-4 md:col-span-2">
-            {/* HEAT SNAPSHOT */}
             <div className="overflow-hidden rounded-3xl border border-white/8 bg-[#0B0F17] p-4 md:p-5">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
@@ -256,7 +246,6 @@ export default function FeedPage() {
               </p>
             </div>
 
-            {/* NEWS AI FEED */}
             <div className="flex-1 rounded-3xl border border-white/8 bg-[#0B0F17] p-4 md:p-5">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
@@ -298,14 +287,15 @@ export default function FeedPage() {
               </div>
 
               <p className="mt-3 text-[10px] text-slate-500">
-                Real headlines will stream from your connected APIs
-                (Bloomberg, Reuters, etc.), enriched by News AI.
+                Real headlines will stream from your connected APIs (Bloomberg,
+                Reuters, etc.), enriched by News AI.
               </p>
             </div>
           </section>
         </div>
       </div>
-    </main>
+      </main>
+    </RequestState>
   );
 }
 
@@ -365,12 +355,7 @@ function MomentumCard({
         </span>
         <span className="text-[10px] text-slate-500">{subtitle}</span>
       </div>
-      <MiniSparkline
-        data={data}
-        positive={positive}
-        width={90}
-        height={32}
-      />
+      <MiniSparkline data={toValueSeries(data)} />
     </div>
   );
 }

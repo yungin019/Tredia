@@ -1,11 +1,13 @@
 import NeonLineChart from "@/components/charts/NeonLineChart";
 import KpiStat from "@/components/charts/KpiStat";
 import PageTransition from "@/components/PageTransition";
+import RequestState from "@/components/ui/RequestState";
 
 export default function TrendsPage() {
   return (
-    <PageTransition>
-      <div className="container mx-auto max-w-7xl px-6 py-8">
+    <RequestState>
+      <PageTransition>
+        <div className="container mx-auto max-w-7xl px-6 py-8">
         <h1 className="text-3xl font-bold text-white mb-6 tracking-tighter">
           Trends
         </h1>
@@ -32,7 +34,8 @@ export default function TrendsPage() {
             deltaType="loss"
           />
         </div>
-      </div>
-    </PageTransition>
+        </div>
+      </PageTransition>
+    </RequestState>
   );
 }
