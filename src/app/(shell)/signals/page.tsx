@@ -1,3 +1,5 @@
+"use client";
+
 import KpiStat from "@/components/charts/KpiStat";
 import PageTransition from "@/components/PageTransition";
 import PaywallGate from "@/components/ui/PaywallGate";

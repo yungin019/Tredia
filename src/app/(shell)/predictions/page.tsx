@@ -1,3 +1,5 @@
+"use client";
+
 import NeonLineChart from "@/components/charts/NeonLineChart";
 import KpiStat from "@/components/charts/KpiStat";
 import PageTransition from "@/components/PageTransition";

@@ -1,3 +1,5 @@
+"use client";
+
 import PaywallGate from "@/components/ui/PaywallGate";
 import Disclaimer from "@/components/ui/Disclaimer";
 import { useAuth } from "@/context/AuthContext";
