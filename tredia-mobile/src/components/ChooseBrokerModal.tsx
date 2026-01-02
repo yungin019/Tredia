@@ -7,47 +7,22 @@ import {
   TouchableOpacity,
   StyleSheet,
   FlatList,
+  Image,
 } from "react-native";
 import { useTheme } from "../context/ThemeContext";
-
-export type BrokerItem = {
-  id: string;
-  name: string;
-  subtitle?: string;
-  url: string;
-};
+import type { BrokerPlatform } from "../services/brokerLinkService";
 
 type Props = {
   visible: boolean;
   onClose: () => void;
-  onSelect: (broker: BrokerItem) => void;
+  brokers: BrokerPlatform[];
+  onSelect: (broker: BrokerPlatform) => void;
 };
-
-// You can later move this to src/data/brokers if you want
-const BROKERS: BrokerItem[] = [
-  {
-    id: "etoro",
-    name: "eToro",
-    subtitle: "Social trading & stocks",
-    url: "https://www.etoro.com",
-  },
-  {
-    id: "binance",
-    name: "Binance",
-    subtitle: "Crypto trading",
-    url: "https://www.binance.com",
-  },
-  {
-    id: "revolut",
-    name: "Revolut",
-    subtitle: "Stocks & crypto inside banking app",
-    url: "https://www.revolut.com",
-  },
-];
 
 export default function ChooseBrokerModal({
   visible,
   onClose,
+  brokers,
   onSelect,
 }: Props) {
   const theme = useTheme();
@@ -70,8 +45,8 @@ export default function ChooseBrokerModal({
           </Text>
 
           <FlatList
-            data={BROKERS}
-            keyExtractor={(item) => item.id}
+            data={brokers}
+            keyExtractor={(item) => item.slug}
             ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
             renderItem={({ item }) => (
               <TouchableOpacity
@@ -83,21 +58,46 @@ export default function ChooseBrokerModal({
                   },
                 ]}
                 onPress={() => onSelect(item)}
+                activeOpacity={0.9}
               >
-                <View>
-                  <Text
-                    style={[styles.brokerName, { color: theme.textPrimary }]}
-                  >
-                    {item.name}
-                  </Text>
-                  {item.subtitle ? (
-                    <Text
-                      style={[styles.brokerSubtitle, { color: theme.textSoft }]}
+                <View style={styles.left}>
+                  {item.logoUrl ? (
+                    <Image
+                      source={{ uri: item.logoUrl }}
+                      style={styles.logo}
+                      resizeMode="contain"
+                    />
+                  ) : (
+                    <View
+                      style={[
+                        styles.logoFallback,
+                        {
+                          borderColor: theme.cardBorder,
+                          backgroundColor: theme.surfaceAlt,
+                        },
+                      ]}
                     >
-                      {item.subtitle}
+                      <Text style={{ color: theme.textSoft, fontWeight: "700" }}>
+                        {item.name?.slice(0, 1)?.toUpperCase() ?? "?"}
+                      </Text>
+                    </View>
+                  )}
+
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.brokerName, { color: theme.textPrimary }]}>
+                      {item.name}
                     </Text>
-                  ) : null}
+                    {item.websiteUrl ? (
+                      <Text
+                        numberOfLines={1}
+                        style={[styles.brokerSubtitle, { color: theme.textSoft }]}
+                      >
+                        {item.websiteUrl}
+                      </Text>
+                    ) : null}
+                  </View>
                 </View>
+
                 <Text style={{ color: theme.accent, fontWeight: "600" }}>
                   Connect →
                 </Text>
@@ -111,6 +111,7 @@ export default function ChooseBrokerModal({
               styles.closeButton,
               { backgroundColor: theme.surfaceAlt, borderColor: theme.cardBorder },
             ]}
+            activeOpacity={0.9}
           >
             <Text style={{ color: theme.textSoft, fontWeight: "500" }}>
               Cancel
@@ -153,6 +154,26 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+  },
+  left: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    flex: 1,
+    paddingRight: 10,
+  },
+  logo: {
+    width: 28,
+    height: 28,
+    borderRadius: 7,
+  },
+  logoFallback: {
+    width: 28,
+    height: 28,
+    borderRadius: 7,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
   brokerName: {
     fontSize: 15,

@@ -19,7 +19,8 @@ import { useNavigation } from "@react-navigation/native";
 
 import { useTheme } from "../context/ThemeContext";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { api } from "../services/api";
+import { api } from "../services/apiClient";
+import i18n from "../config/i18n";
 
 // ---------- Types matching backend payload ----------
 
@@ -91,7 +92,13 @@ export interface AiDashboardPayload {
 
 // ---------- Tabs ----------
 
-const ALERT_TABS = ["All", "Signals", "News", "Portfolio", "Risk"] as const;
+const ALERT_TABS = [
+  i18n.t("alerts.tabAll"),
+  i18n.t("alerts.tabSignals"),
+  i18n.t("alerts.tabNews"),
+  i18n.t("alerts.tabPortfolio"),
+  i18n.t("alerts.tabRisk")
+] as const;
 type AlertTab = (typeof ALERT_TABS)[number];
 
 // ---------- Helper: normalize any text (fix {title, text} bug) ----------
@@ -205,16 +212,30 @@ export function AlertsContent() {
 
       setError(null);
 
-      const res = await api.get<AiDashboardPayload>("/ai/dashboard", {
-  params: {
-    heatmapLimit: 40,
-    spotlightLimit: 5,
-    newsLimit: 20,
-  },
-});
-
-
-      const json = res.data;
+      let json: AiDashboardPayload | null = null;
+      try {
+        const res = await api.get<AiDashboardPayload>("/ai/dashboard", {
+          params: {
+            heatmapLimit: 40,
+            spotlightLimit: 5,
+            newsLimit: 20,
+          },
+        });
+        json = res.data;
+      } catch (err: any) {
+        // If 401 or network error, fallback to dev data only in __DEV__
+        if (__DEV__) {
+          json = {
+            generatedAt: new Date().toISOString(),
+            heatmap: [],
+            spotlight: [],
+            summary: "[DEV] No live data. Connect backend.",
+            newsSentiment: [],
+          };
+        } else {
+          throw err;
+        }
+      }
       setDashboard(json || null);
     } catch (err) {
       console.warn("[Alerts] dashboard fetch failed", err);
@@ -280,11 +301,11 @@ export function AlertsContent() {
       {/* Header */}
       <View style={styles.headerRow}>
         <View>
-          <Text style={[styles.title, { color: theme.textPrimary }]}>
-            Alerts
+          <Text style={[styles.title, { color: theme.textPrimary }]}> 
+            {i18n.t("alerts.title")}
           </Text>
-          <Text style={[styles.subtitle, { color: theme.textSoft }]}>
-            Super AI dashboard • live market intelligence
+          <Text style={[styles.subtitle, { color: theme.textSoft }]}> 
+            {i18n.t("alerts.subtitle")}
           </Text>
         </View>
         {loading && <ActivityIndicator size="small" color={theme.accent} />}
@@ -329,8 +350,8 @@ export function AlertsContent() {
       </View>
 
       {error && (
-        <Text style={[styles.errorText, { color: theme.textSoft }]}>
-          {error}
+        <Text style={[styles.errorText, { color: theme.textSoft }]}> 
+          {i18n.t("alerts.error", { error })}
         </Text>
       )}
 
@@ -351,7 +372,7 @@ export function AlertsContent() {
               style={[styles.summaryLabel, { color: theme.accent }]}
               numberOfLines={1}
             >
-              TREDIA AI · TODAY&apos;S VIEW
+              {i18n.t("alerts.summaryLabel")}
             </Text>
 
             <Text
@@ -359,15 +380,14 @@ export function AlertsContent() {
             >
               {summaryText
                 ? summaryText
-                : "This is where Tredia tells you where attention, money and volatility are concentrating right now. Once your data provider is live, this section shows a real daily briefing."}
+                : i18n.t("alerts.summaryFallback")}
             </Text>
 
             {dashboard?.generatedAt && (
               <Text
                 style={[styles.summaryMeta, { color: theme.textSoft }]}
               >
-                Updated{" "}
-                {new Date(dashboard.generatedAt).toLocaleTimeString()}
+                {i18n.t("alerts.updated", { time: new Date(dashboard.generatedAt).toLocaleTimeString() })}
               </Text>
             )}
           </View>
@@ -377,7 +397,7 @@ export function AlertsContent() {
             <Text
               style={[styles.sectionTitle, { color: theme.textPrimary }]}
             >
-              AI Spotlight
+              {i18n.t("alerts.spotlightTitle")}
             </Text>
             {spotlight.length > 0 && (
               <Text
@@ -386,15 +406,14 @@ export function AlertsContent() {
                   { color: theme.textSoft },
                 ]}
               >
-                Top {spotlight.length} setups filtered by Super AI
+                {i18n.t("alerts.spotlightCaption", { count: spotlight.length })}
               </Text>
             )}
           </View>
 
           {spotlight.length === 0 && !loading && !error && (
-            <Text style={[styles.emptyText, { color: theme.textSoft }]}>
-              No setups yet. AI will highlight opportunities when confidence and
-              heat cross its threshold.
+            <Text style={[styles.emptyText, { color: theme.textSoft }]}> 
+              {i18n.t("alerts.spotlightEmpty")}
             </Text>
           )}
 

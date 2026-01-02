@@ -11,7 +11,12 @@ import AssetDetailScreen from "../screens/AssetDetailScreen";
 // ---- Stack param list for the Markets area ----
 export type MarketsStackParamList = {
   MarketsHome: undefined;
-  AssetDetail: { symbol: string };
+  AssetDetail: {
+  symbol: string;
+  presetSide?: "BUY" | "SELL";
+  source?: string;
+  autoOpenTrade?: boolean;
+};
 };
 
 const Stack = createNativeStackNavigator<MarketsStackParamList>();

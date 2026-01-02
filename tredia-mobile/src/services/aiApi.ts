@@ -1,20 +1,16 @@
 // src/services/aiApi.ts
-import { API_BASE_URL } from "../config/api";
+import { api } from "./apiClient";
 
 class AiApi {
   async chat(message: string, plan: "free" | "pro" | "elite") {
-    const res = await fetch(`${API_BASE_URL}/api/ai/chat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        message,
-        plan,
-        portfolio: {},
-        market: {},
-      }),
+    const res = await api.post("/ai/chat", {
+      message,
+      plan,
+      portfolio: {},
+      market: {},
     });
 
-    return await res.json();
+    return res.data;
   }
 }
 

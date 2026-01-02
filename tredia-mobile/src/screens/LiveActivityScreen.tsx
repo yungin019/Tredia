@@ -14,7 +14,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { useTheme } from "../context/ThemeContext";
-import { api } from "../services/api";
+import { api } from "../services/apiClient";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 
 export interface LiveActivityItem {

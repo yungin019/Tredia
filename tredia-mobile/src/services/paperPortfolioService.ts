@@ -1,6 +1,6 @@
 // src/services/paperPortfolioService.ts
 
-import api from "./api";
+import { api } from "./api";
 
 // -------------------
 // Types from backend

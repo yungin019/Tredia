@@ -1,5 +1,5 @@
 // src/components/TradeModal.tsx
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Modal,
   View,
@@ -16,20 +16,28 @@ import {
   type ExecuteTradeRequest,
 } from "../services/paperTradeService";
 
+export type PresetSide = "BUY" | "SELL";
+
 export interface TradeModalProps {
   visible: boolean;
   symbol: string | null;
+  presetSide?: PresetSide; // ✅ NEW
   onClose: () => void;
 }
 
 const TradeModal: React.FC<TradeModalProps> = ({
   visible,
   symbol,
+  presetSide,
   onClose,
 }) => {
-  const theme = useTheme();
+  const theme: any = useTheme();
 
-  const [side, setSide] = useState<"buy" | "sell">("buy");
+  const computedInitialSide = useMemo<"buy" | "sell">(() => {
+    return presetSide === "SELL" ? "sell" : "buy";
+  }, [presetSide]);
+
+  const [side, setSide] = useState<"buy" | "sell">(computedInitialSide);
   const [orderType, setOrderType] = useState<"market" | "limit">("market");
   const [quantity, setQuantity] = useState<string>("");
   const [limitPrice, setLimitPrice] = useState<string>("");
@@ -37,12 +45,20 @@ const TradeModal: React.FC<TradeModalProps> = ({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const resetState = () => {
-    setSide("buy");
+    setSide(computedInitialSide); // ✅ respect preset
     setOrderType("market");
     setQuantity("");
     setLimitPrice("");
     setErrorMsg(null);
   };
+
+  // ✅ When modal opens, apply presetSide (and reset form)
+  useEffect(() => {
+    if (visible) {
+      resetState();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, computedInitialSide]);
 
   const handleClose = () => {
     if (loading) return;
@@ -57,7 +73,7 @@ const TradeModal: React.FC<TradeModalProps> = ({
     }
 
     const qty = parseFloat(quantity);
-    if (!quantity || isNaN(qty) || qty <= 0) {
+    if (!quantity || Number.isNaN(qty) || qty <= 0) {
       setErrorMsg("Please enter a valid quantity.");
       return;
     }
@@ -65,7 +81,7 @@ const TradeModal: React.FC<TradeModalProps> = ({
     let limit: number | undefined = undefined;
     if (orderType === "limit") {
       const lp = parseFloat(limitPrice);
-      if (!limitPrice || isNaN(lp) || lp <= 0) {
+      if (!limitPrice || Number.isNaN(lp) || lp <= 0) {
         setErrorMsg("Please enter a valid limit price.");
         return;
       }
@@ -73,7 +89,7 @@ const TradeModal: React.FC<TradeModalProps> = ({
     }
 
     const payload: ExecuteTradeRequest = {
-      symbol: symbol || "",
+      symbol,
       side,
       quantity: qty,
       orderType,
@@ -189,9 +205,7 @@ const TradeModal: React.FC<TradeModalProps> = ({
                     styles.pillSmallText,
                     {
                       color:
-                        orderType === "market"
-                          ? theme.accent
-                          : theme.textSoft,
+                        orderType === "market" ? theme.accent : theme.textSoft,
                     },
                   ]}
                 >
@@ -244,7 +258,7 @@ const TradeModal: React.FC<TradeModalProps> = ({
               />
             </View>
 
-            {/* Limit price (only visible for limit orders) */}
+            {/* Limit price */}
             {orderType === "limit" && (
               <View style={styles.field}>
                 <Text style={[styles.label, { color: theme.textSoft }]}>
@@ -278,7 +292,10 @@ const TradeModal: React.FC<TradeModalProps> = ({
               <TouchableOpacity
                 style={[
                   styles.button,
-                  { borderColor: theme.cardBorder, backgroundColor: "transparent" },
+                  {
+                    borderColor: theme.cardBorder,
+                    backgroundColor: "transparent",
+                  },
                 ]}
                 onPress={handleClose}
                 disabled={loading}

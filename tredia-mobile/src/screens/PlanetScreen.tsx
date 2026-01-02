@@ -12,7 +12,7 @@ import {
 import { useNavigation } from "@react-navigation/native";
 
 import { useTheme } from "../context/ThemeContext";
-import { api } from "../services/api";
+import { api } from "../services/apiClient";
 
 type CategoryKey = "all" | "crypto" | "stocks" | "forex" | "metals";
 

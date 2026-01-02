@@ -1,24 +1,21 @@
-// src/components/Stat.tsx
 import React from "react";
-import { View, Text } from "react-native";
-import { styled } from "nativewind";
+import { View, Text, StyleSheet } from "react-native";
+import { useTheme } from "../context/ThemeContext";
 
-const StyledView = styled(View);
-const StyledText = styled(Text);
+export default function Stat(props: any) {
+  const theme: any = useTheme();
+  const { label, value } = props ?? {};
 
-interface StatProps {
-  label: string;
-  value: string;
-  className?: string;
+  return (
+    <View style={[styles.box, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
+      <Text style={[styles.label, { color: theme.textSoft }]}>{String(label ?? "")}</Text>
+      <Text style={[styles.value, { color: theme.textPrimary ?? theme.text }]}>{String(value ?? "—")}</Text>
+    </View>
+  );
 }
 
-const Stat: React.FC<StatProps> = ({ label, value, className }) => {
-  return (
-    <StyledView className={`flex-col ${className}`}>
-      <StyledText className="text-sm text-gray-400">{label}</StyledText>
-      <StyledText className="font-semibold text-white">{value}</StyledText>
-    </StyledView>
-  );
-};
-
-export default Stat;
+const styles = StyleSheet.create({
+  box: { borderWidth: 1, borderRadius: 16, padding: 12 },
+  label: { fontSize: 11 },
+  value: { marginTop: 4, fontSize: 14, fontWeight: "800" },
+});

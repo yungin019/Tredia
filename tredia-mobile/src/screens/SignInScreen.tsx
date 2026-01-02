@@ -17,7 +17,7 @@ import * as AuthSession from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
 import * as AppleAuthentication from "expo-apple-authentication";
 
-import { api, API_BASE_URL } from "../services/api";
+import { api } from "../services/apiClient";
 import { useAuth } from "../context/AuthContext";
 
 WebBrowser.maybeCompleteAuthSession();
@@ -99,8 +99,6 @@ const SignInScreen: React.FC = () => {
   const handleApple = async () => {
     try {
       setLoadingApple(true);
-      console.log("[API BASE URL][SIGNIN]", API_BASE_URL);
-      console.log("[APPLE][SIGNIN] baseURL =", API_BASE_URL);
 
       const credential = await AppleAuthentication.signInAsync({
         requestedScopes: [
@@ -110,10 +108,6 @@ const SignInScreen: React.FC = () => {
       });
 
       if (credential?.identityToken) {
-        console.log(
-          "[APPLE][SIGNIN] POST",
-          `${API_BASE_URL}/auth/apple`
-        );
         const res = await api.post("/auth/apple", {
           identityToken: credential.identityToken,
         });

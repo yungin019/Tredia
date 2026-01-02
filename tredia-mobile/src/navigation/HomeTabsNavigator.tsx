@@ -7,7 +7,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../context/ThemeContext";
 
 import HomeScreen from "../screens/HomeScreen";
-import PlanetScreen from "../screens/PlanetScreen";
+// import PlanetScreen from "../screens/PlanetScreen";
 import AssistantScreen from "../screens/AssistantScreen";
 import PortfolioScreen from "../screens/PortfolioScreen";
 import CommunityNavigator from "./CommunityNavigator";
@@ -17,7 +17,6 @@ import MarketsNavigator from "./MarketsNavigator";
 export type HomeTabsParamList = {
   Home: undefined;
   Markets: undefined;
-  Planet: undefined;
   AI: undefined;
   Portfolio: undefined;
   Profile: undefined;
@@ -66,16 +65,7 @@ const HomeTabsNavigator: React.FC = () => {
         }}
       />
 
-      {/* PLANET = Community hub (feed, creators, leaderboard, rewards) */}
-      <Tab.Screen
-        name="Planet"
-        component={CommunityNavigator}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="globe-outline" size={size} color={color} />
-          ),
-        }}
-      />
+
 
       {/* SUPER AI ASSISTANT */}
       <Tab.Screen

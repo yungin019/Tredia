@@ -1,53 +1,52 @@
-// src/components/ListItem.tsx
 import React from "react";
-import { View, Text, Pressable } from "react-native";
-import { styled } from "nativewind";
-import { MaterialIcons } from "@expo/vector-icons";
-import { trediaTheme } from "../theme/trediaTheme";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { useTheme } from "../context/ThemeContext";
 
-const StyledPressable = styled(Pressable);
-const StyledView = styled(View);
-const StyledText = styled(Text);
+export default function ListItem(props: any) {
+  const theme: any = useTheme();
+  const { title, subtitle, right, onPress } = props ?? {};
 
-interface ListItemProps {
-  icon?: keyof typeof MaterialIcons.glyphMap;
-  title: string;
-  subtitle?: string;
-  rightContent?: React.ReactNode;
-  onPress?: () => void;
+  const Container: any = onPress ? TouchableOpacity : View;
+
+  return (
+    <Container
+      onPress={onPress}
+      activeOpacity={0.9}
+      style={[
+        styles.row,
+        { borderColor: theme.cardBorder, backgroundColor: theme.surface },
+      ]}
+    >
+      <View style={{ flex: 1 }}>
+        <Text style={[styles.title, { color: theme.textPrimary ?? theme.text }]}>
+          {String(title ?? "")}
+        </Text>
+        {!!subtitle && (
+          <Text style={[styles.subtitle, { color: theme.textSoft }]} numberOfLines={2}>
+            {String(subtitle)}
+          </Text>
+        )}
+      </View>
+
+      {!!right && (
+        <Text style={[styles.right, { color: theme.textSoft }]}>
+          {String(right)}
+        </Text>
+      )}
+    </Container>
+  );
 }
 
-const ListItem: React.FC<ListItemProps> = ({
-  icon,
-  title,
-  subtitle,
-  rightContent,
-  onPress,
-}) => {
-  return (
-    <StyledPressable
-      onPress={onPress}
-      className="flex-row items-center p-4 rounded-lg active:bg-white/10"
-    >
-      {icon && (
-        <MaterialIcons
-          name={icon}
-          size={24}
-          color={trediaTheme.colors.electricBlue}
-          style={{ marginRight: 16 }}
-        />
-      )}
-      <StyledView className="flex-1">
-        <StyledText className="text-base text-white">{title}</StyledText>
-        {subtitle && (
-          <StyledText className="text-sm text-gray-400">
-            {subtitle}
-          </StyledText>
-        )}
-      </StyledView>
-      {rightContent}
-    </StyledPressable>
-  );
-};
-
-export default ListItem;
+const styles = StyleSheet.create({
+  row: {
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  title: { fontSize: 14, fontWeight: "700" },
+  subtitle: { marginTop: 2, fontSize: 12 },
+  right: { fontSize: 12, fontWeight: "600" },
+});

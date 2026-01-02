@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useTheme } from "../context/ThemeContext";
-import { api } from "../services/api";
+import { api } from "../services/apiClient";
 
 const PostCreateScreen: React.FC = () => {
   const theme: any = useTheme();

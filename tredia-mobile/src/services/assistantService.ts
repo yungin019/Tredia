@@ -1,7 +1,6 @@
 // src/services/assistantService.ts
 
-import axios from "axios";
-import { API_BASE_URL } from "../config";
+import { api } from "./apiClient";
 import type { SubscriptionPlan } from "../store/subscriptionClient";
 
 type AiPlan = SubscriptionPlan;
@@ -15,7 +14,7 @@ export const askTrediaAI = async (
   message: string,
   plan: AiPlan = "free"
 ): Promise<AiChatResponse> => {
-  const res = await axios.post(`${API_BASE_URL}/ai/chat`, {
+  const res = await api.post("/ai/chat", {
     message,
     plan,
   });

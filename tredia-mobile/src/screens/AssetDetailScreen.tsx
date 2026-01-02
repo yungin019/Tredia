@@ -1,6 +1,5 @@
 // src/screens/AssetDetailScreen.tsx
-
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -14,7 +13,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { useTheme } from "../context/ThemeContext";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { api } from "../services/api";
+import { api } from "../services/apiClient";
 import MiniSparkline from "../components/charts/MiniSparkline";
 import useTradeModal from "../hooks/useTradeModal";
 import NeonButton from "../components/NeonButton";
@@ -47,8 +46,6 @@ type Candle = {
   volume?: number | null;
 };
 
-// ---- Super AI news sentiment (same shape as AlertsScreen) ----
-
 type SentimentLabel = "bullish" | "bearish" | "neutral";
 
 type NewsSentiment = {
@@ -56,11 +53,11 @@ type NewsSentiment = {
   title: string;
   summary: string | null;
   sentimentLabel: SentimentLabel;
-  sentimentScore: number; // -1 to 1
-  impactScore: number; // 0–100
+  sentimentScore: number;
+  impactScore: number;
   impactedSymbols: string[];
   horizon: "intraday" | "swing" | "position";
-  confidence: number; // 0–1
+  confidence: number;
   source?: string | null;
   url?: string | null;
   publishedAt?: string | null;
@@ -69,17 +66,12 @@ type NewsSentiment = {
 };
 
 type AiDashboardNewsPayload = {
-  // new backend shape
   newsRadar?: NewsSentiment[];
-  // older/demo shape
   newsSentiment?: NewsSentiment[];
 };
 
-// --------------------------------------------------------------
-
 const AssetDetailScreen: React.FC<Props> = ({ route, navigation }) => {
-  // rename to avoid confusion and allow safer logic
-  const { symbol: routeSymbol } = route.params;
+  const { symbol: routeSymbol, autoOpenTrade } = route.params;
   const theme: any = useTheme();
 
   const { openTradeModal, TradeModalElement } = useTradeModal();
@@ -92,9 +84,7 @@ const AssetDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // symbol that we actually show in the UI
-  const displaySymbol: string | undefined =
-    info?.symbol ?? routeSymbol ?? undefined;
+  const displaySymbol: string | undefined = info?.symbol ?? routeSymbol ?? undefined;
 
   const load = useCallback(
     async (isRefresh = false) => {
@@ -102,10 +92,8 @@ const AssetDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
 
-      // Normalize symbol from route
       const trimmed = routeSymbol?.trim() ?? "";
       if (!trimmed) {
-        // No symbol → don't hit API, just show a clean message
         console.log("[AssetDetail] No symbol provided in route params");
         setInfo(null);
         setCandles([]);
@@ -119,12 +107,10 @@ const AssetDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       const symbol = trimmed.toUpperCase();
 
       try {
-        // --- 1) LIVE ASSET INFO ---
-        const infoRes = await api.get(
-          `/markets/info/${encodeURIComponent(symbol)}`
-        );
-
+        // 1) INFO
+        const infoRes = await api.get(`/markets/info/${encodeURIComponent(symbol)}`);
         const infoPayload = infoRes.data?.info ?? infoRes.data ?? {};
+
         const normalizedInfo: AssetInfo = {
           symbol: infoPayload.symbol ?? symbol,
           name: infoPayload.name ?? infoPayload.companyName ?? null,
@@ -159,12 +145,10 @@ const AssetDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
         setInfo(normalizedInfo);
 
-        // --- 2) LIVE OHLC CANDLES ---
-        const ohlcRes = await api.get(
-          `/markets/ohlc/${encodeURIComponent(symbol)}`
-        );
-
+        // 2) OHLC
+        const ohlcRes = await api.get(`/markets/ohlc/${encodeURIComponent(symbol)}`);
         const raw = ohlcRes.data;
+
         const candleArray: Candle[] = Array.isArray(raw?.candles)
           ? raw.candles
           : Array.isArray(raw)
@@ -173,14 +157,14 @@ const AssetDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
         const cleanedCandles: Candle[] = candleArray
           .filter(
-            (c) =>
+            (c: any) =>
               c &&
               typeof c.open === "number" &&
               typeof c.high === "number" &&
               typeof c.low === "number" &&
               typeof c.close === "number"
           )
-          .map((c) => ({
+          .map((c: any) => ({
             time: c.time,
             open: c.open,
             high: c.high,
@@ -195,32 +179,26 @@ const AssetDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         setError("Failed to load live market data for this asset.");
       }
 
-      // --- 3) SUPER AI NEWS IMPACT (non-blocking) ---
+      // 3) SUPER AI NEWS (non-blocking)
       try {
         const dashRes = await api.get<AiDashboardNewsPayload>("/ai/dashboard", {
-          params: {
-            newsLimit: 30,
-          },
+          params: { newsLimit: 30 },
         });
 
-        const rawNews =
-          dashRes.data?.newsSentiment ?? dashRes.data?.newsRadar ?? [];
+        const rawNews = dashRes.data?.newsSentiment ?? dashRes.data?.newsRadar ?? [];
         const allNews: NewsSentiment[] = Array.isArray(rawNews) ? rawNews : [];
 
         const byAsset = allNews.filter(
-          (n) =>
-            Array.isArray(n.impactedSymbols) &&
-            n.impactedSymbols.includes(symbol)
+          (n) => Array.isArray(n.impactedSymbols) && n.impactedSymbols.includes(symbol)
         );
 
-        // Take top 4 with highest impact score
         const sorted = [...byAsset].sort(
           (a, b) => (b.impactScore ?? 0) - (a.impactScore ?? 0)
         );
+
         setNewsImpact(sorted.slice(0, 4));
       } catch (e: any) {
         console.log("[AssetDetail] load news impact error", e?.message || e);
-        // Don’t surface error to user here – asset data is the priority.
       } finally {
         setLoading(false);
         setRefreshing(false);
@@ -233,13 +211,19 @@ const AssetDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     void load(false);
   }, [load]);
 
+  // Optional: auto-open trade modal when navigated with autoOpenTrade=true
+  useEffect(() => {
+    if (!autoOpenTrade) return;
+    if (!displaySymbol) return;
+    openTradeModal(displaySymbol);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoOpenTrade, displaySymbol]);
+
   const onRefresh = () => {
     void load(true);
   };
 
-  const sparklineData =
-    candles.length > 0 ? candles.map((c) => c.close) : [];
-
+  const sparklineData = useMemo(() => (candles.length > 0 ? candles.map((c) => c.close) : []), [candles]);
   const lastCandle = candles.length > 0 ? candles[candles.length - 1] : null;
 
   const price = info?.price ?? null;
@@ -247,22 +231,16 @@ const AssetDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const changeAbs = info?.changeAbs ?? null;
   const isUp = changePct !== null && changePct >= 0;
 
-  const formatNumber = (
-    value: number | null | undefined,
-    decimals = 2
-  ): string => {
+  const formatNumber = (value: number | null | undefined, decimals = 2): string => {
     if (value === null || value === undefined || Number.isNaN(value)) return "—";
     return value.toFixed(decimals);
   };
 
   const formatBig = (value: number | null | undefined): string => {
-    if (!value && value !== 0) return "—";
-    if (value >= 1_000_000_000)
-      return (value / 1_000_000_000).toFixed(1) + " B";
-    if (value >= 1_000_000)
-      return (value / 1_000_000).toFixed(1) + " M";
-    if (value >= 1_000)
-      return (value / 1_000).toFixed(1) + " K";
+    if (value === null || value === undefined || Number.isNaN(value)) return "—";
+    if (value >= 1_000_000_000) return (value / 1_000_000_000).toFixed(1) + " B";
+    if (value >= 1_000_000) return (value / 1_000_000).toFixed(1) + " M";
+    if (value >= 1_000) return (value / 1_000).toFixed(1) + " K";
     return value.toFixed(0);
   };
 
@@ -276,12 +254,7 @@ const AssetDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
   if (loading && !info && !error) {
     return (
-      <View
-        style={[
-          styles.loadingContainer,
-          { backgroundColor: theme.background },
-        ]}
-      >
+      <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
         <ActivityIndicator size="large" color={theme.accent} />
       </View>
     );
@@ -293,50 +266,30 @@ const AssetDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         style={{ flex: 1 }}
         contentContainerStyle={styles.container}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={theme.accent}
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.accent} />
         }
       >
-        {/* BACK BUTTON */}
+        {/* BACK */}
         <View style={styles.backRow}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
             style={[
               styles.backButton,
-              {
-                borderColor: theme.cardBorder,
-                backgroundColor: theme.surface,
-              },
+              { borderColor: theme.cardBorder, backgroundColor: theme.surface },
             ]}
           >
-            <Text
-              style={[
-                styles.backButtonText,
-                { color: theme.textSoft },
-              ]}
-            >
-              ← Back
-            </Text>
+            <Text style={[styles.backButtonText, { color: theme.textSoft }]}>← Back</Text>
           </TouchableOpacity>
         </View>
 
         {/* HEADER */}
         <View style={styles.headerRow}>
           <View>
-            <Text
-              style={[styles.symbol, { color: theme.textPrimary }]}
-            >
+            <Text style={[styles.symbol, { color: theme.textPrimary }]}>
               {displaySymbol ?? "—"}
             </Text>
             {!!info?.name && (
-              <Text
-                style={[styles.name, { color: theme.textSoft }]}
-              >
-                {info.name}
-              </Text>
+              <Text style={[styles.name, { color: theme.textSoft }]}>{info.name}</Text>
             )}
           </View>
 
@@ -345,45 +298,24 @@ const AssetDetailScreen: React.FC<Props> = ({ route, navigation }) => {
               <View
                 style={[
                   styles.tag,
-                  {
-                    backgroundColor: theme.surface,
-                    borderColor: theme.cardBorder,
-                  },
+                  { backgroundColor: theme.surface, borderColor: theme.cardBorder },
                 ]}
               >
-                <Text
-                  style={[
-                    styles.tagText,
-                    { color: theme.textSoft },
-                  ]}
-                >
-                  {info.assetType}
-                </Text>
+                <Text style={[styles.tagText, { color: theme.textSoft }]}>{info.assetType}</Text>
               </View>
             )}
             {!!info?.exchange && (
-              <Text
-                style={[
-                  styles.exchange,
-                  { color: theme.textSoft },
-                ]}
-              >
-                {info.exchange}
-              </Text>
+              <Text style={[styles.exchange, { color: theme.textSoft }]}>{info.exchange}</Text>
             )}
           </View>
         </View>
 
-        {/* PRICE BLOCK */}
+        {/* PRICE */}
         <View style={styles.priceRow}>
           <View>
-            <Text
-              style={[styles.price, { color: theme.textPrimary }]}
-            >
+            <Text style={[styles.price, { color: theme.textPrimary }]}>
               {price !== null
-                ? `${price.toFixed(2)}${
-                    info?.currency ? " " + info.currency : ""
-                  }`
+                ? `${price.toFixed(2)}${info?.currency ? " " + info.currency : ""}`
                 : "—"}
             </Text>
             <View style={styles.changeRow}>
@@ -400,17 +332,10 @@ const AssetDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                   },
                 ]}
               >
-                {changePct === null
-                  ? "—"
-                  : `${isUp ? "+" : ""}${changePct.toFixed(2)}%`}
+                {changePct === null ? "—" : `${isUp ? "+" : ""}${changePct.toFixed(2)}%`}
               </Text>
               {changeAbs !== null && (
-                <Text
-                  style={[
-                    styles.changeAbs,
-                    { color: theme.textSoft },
-                  ]}
-                >
+                <Text style={[styles.changeAbs, { color: theme.textSoft }]}>
                   {`${changeAbs >= 0 ? "+" : ""}${changeAbs.toFixed(2)}`}
                 </Text>
               )}
@@ -418,37 +343,14 @@ const AssetDetailScreen: React.FC<Props> = ({ route, navigation }) => {
           </View>
         </View>
 
-        {/* ERROR MESSAGE (if any) */}
-        {error && (
-          <Text
-            style={[
-              styles.errorText,
-              { color: theme.danger },
-            ]}
-          >
-            {error}
-          </Text>
-        )}
+        {/* ERROR */}
+        {error && <Text style={[styles.errorText, { color: theme.danger }]}>{error}</Text>}
 
-        {/* CHART CARD – LIVE CANDLES (SPARKLINE) */}
-        <View
-          style={[
-            styles.card,
-            {
-              backgroundColor: theme.surface,
-              borderColor: theme.cardBorder,
-            },
-          ]}
-        >
+        {/* CHART */}
+        <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
           <View style={styles.cardHeaderRow}>
-            <Text
-              style={[styles.cardTitle, { color: theme.textPrimary }]}
-            >
-              Price action
-            </Text>
-            <Text
-              style={[styles.cardSubtitle, { color: theme.textSoft }]}
-            >
+            <Text style={[styles.cardTitle, { color: theme.textPrimary }]}>Price action</Text>
+            <Text style={[styles.cardSubtitle, { color: theme.textSoft }]}>
               Live candles • Last sessions
             </Text>
           </View>
@@ -456,19 +358,12 @@ const AssetDetailScreen: React.FC<Props> = ({ route, navigation }) => {
           {loading && sparklineData.length === 0 ? (
             <View style={styles.loaderRow}>
               <ActivityIndicator size="small" color={theme.accent} />
-              <Text
-                style={[
-                  styles.loaderText,
-                  { color: theme.textSoft },
-                ]}
-              >
+              <Text style={[styles.loaderText, { color: theme.textSoft }]}>
                 Loading live OHLC data…
               </Text>
             </View>
           ) : sparklineData.length === 0 ? (
-            <Text
-              style={[styles.emptyText, { color: theme.textSoft }]}
-            >
+            <Text style={[styles.emptyText, { color: theme.textSoft }]}>
               No candle data available yet for this asset.
             </Text>
           ) : (
@@ -482,78 +377,29 @@ const AssetDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             </View>
           )}
 
-          {/* Small OHLC snapshot from latest candle */}
           {lastCandle && (
             <View style={styles.ohlcRow}>
               <View style={styles.ohlcCol}>
-                <Text
-                  style={[
-                    styles.ohlcLabel,
-                    { color: theme.textSoft },
-                  ]}
-                >
-                  Open
-                </Text>
-                <Text
-                  style={[
-                    styles.ohlcValue,
-                    { color: theme.textPrimary },
-                  ]}
-                >
+                <Text style={[styles.ohlcLabel, { color: theme.textSoft }]}>Open</Text>
+                <Text style={[styles.ohlcValue, { color: theme.textPrimary }]}>
                   {formatNumber(lastCandle.open)}
                 </Text>
               </View>
               <View style={styles.ohlcCol}>
-                <Text
-                  style={[
-                    styles.ohlcLabel,
-                    { color: theme.textSoft },
-                  ]}
-                >
-                  High
-                </Text>
-                <Text
-                  style={[
-                    styles.ohlcValue,
-                    { color: theme.textPrimary },
-                  ]}
-                >
+                <Text style={[styles.ohlcLabel, { color: theme.textSoft }]}>High</Text>
+                <Text style={[styles.ohlcValue, { color: theme.textPrimary }]}>
                   {formatNumber(lastCandle.high)}
                 </Text>
               </View>
               <View style={styles.ohlcCol}>
-                <Text
-                  style={[
-                    styles.ohlcLabel,
-                    { color: theme.textSoft },
-                  ]}
-                >
-                  Low
-                </Text>
-                <Text
-                  style={[
-                    styles.ohlcValue,
-                    { color: theme.textPrimary },
-                  ]}
-                >
+                <Text style={[styles.ohlcLabel, { color: theme.textSoft }]}>Low</Text>
+                <Text style={[styles.ohlcValue, { color: theme.textPrimary }]}>
                   {formatNumber(lastCandle.low)}
                 </Text>
               </View>
               <View style={styles.ohlcCol}>
-                <Text
-                  style={[
-                    styles.ohlcLabel,
-                    { color: theme.textSoft },
-                  ]}
-                >
-                  Close
-                </Text>
-                <Text
-                  style={[
-                    styles.ohlcValue,
-                    { color: theme.textPrimary },
-                  ]}
-                >
+                <Text style={[styles.ohlcLabel, { color: theme.textSoft }]}>Close</Text>
+                <Text style={[styles.ohlcValue, { color: theme.textPrimary }]}>
                   {formatNumber(lastCandle.close)}
                 </Text>
               </View>
@@ -561,141 +407,76 @@ const AssetDetailScreen: React.FC<Props> = ({ route, navigation }) => {
           )}
         </View>
 
-        {/* STATS CARD */}
-        <View
-          style={[
-            styles.card,
-            {
-              backgroundColor: theme.surface,
-              borderColor: theme.cardBorder,
-            },
-          ]}
-        >
+        {/* STATS */}
+        <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
           <View style={styles.cardHeaderRow}>
-            <Text
-              style={[styles.cardTitle, { color: theme.textPrimary }]}
-            >
-              Stats
-            </Text>
-            <Text
-              style={[styles.cardSubtitle, { color: theme.textSoft }]}
-            >
+            <Text style={[styles.cardTitle, { color: theme.textPrimary }]}>Stats</Text>
+            <Text style={[styles.cardSubtitle, { color: theme.textSoft }]}>
               Live snapshot from your data provider
             </Text>
           </View>
 
           <View style={styles.statsGrid}>
             <View style={styles.statItem}>
-              <Text
-                style={[styles.statLabel, { color: theme.textSoft }]}
-              >
-                Day high
-              </Text>
-              <Text
-                style={[styles.statValue, { color: theme.textPrimary }]}
-              >
+              <Text style={[styles.statLabel, { color: theme.textSoft }]}>Day high</Text>
+              <Text style={[styles.statValue, { color: theme.textPrimary }]}>
                 {formatNumber(info?.high)}
               </Text>
             </View>
 
             <View style={styles.statItem}>
-              <Text
-                style={[styles.statLabel, { color: theme.textSoft }]}
-              >
-                Day low
-              </Text>
-              <Text
-                style={[styles.statValue, { color: theme.textPrimary }]}
-              >
+              <Text style={[styles.statLabel, { color: theme.textSoft }]}>Day low</Text>
+              <Text style={[styles.statValue, { color: theme.textPrimary }]}>
                 {formatNumber(info?.low)}
               </Text>
             </View>
 
             <View style={styles.statItem}>
-              <Text
-                style={[styles.statLabel, { color: theme.textSoft }]}
-              >
-                Open
-              </Text>
-              <Text
-                style={[styles.statValue, { color: theme.textPrimary }]}
-              >
+              <Text style={[styles.statLabel, { color: theme.textSoft }]}>Open</Text>
+              <Text style={[styles.statValue, { color: theme.textPrimary }]}>
                 {formatNumber(info?.open)}
               </Text>
             </View>
 
             <View style={styles.statItem}>
-              <Text
-                style={[styles.statLabel, { color: theme.textSoft }]}
-              >
-                Prev. close
-              </Text>
-              <Text
-                style={[styles.statValue, { color: theme.textPrimary }]}
-              >
+              <Text style={[styles.statLabel, { color: theme.textSoft }]}>Prev. close</Text>
+              <Text style={[styles.statValue, { color: theme.textPrimary }]}>
                 {formatNumber(info?.prevClose)}
               </Text>
             </View>
 
             <View style={styles.statItem}>
-              <Text
-                style={[styles.statLabel, { color: theme.textSoft }]}
-              >
-                Volume
-              </Text>
-              <Text
-                style={[styles.statValue, { color: theme.textPrimary }]}
-              >
+              <Text style={[styles.statLabel, { color: theme.textSoft }]}>Volume</Text>
+              <Text style={[styles.statValue, { color: theme.textPrimary }]}>
                 {formatBig(info?.volume24h ?? null)}
               </Text>
             </View>
 
             <View style={styles.statItem}>
-              <Text
-                style={[styles.statLabel, { color: theme.textSoft }]}
-              >
-                Market cap
-              </Text>
-              <Text
-                style={[styles.statValue, { color: theme.textPrimary }]}
-              >
+              <Text style={[styles.statLabel, { color: theme.textSoft }]}>Market cap</Text>
+              <Text style={[styles.statValue, { color: theme.textPrimary }]}>
                 {formatBig(info?.marketCap ?? null)}
               </Text>
             </View>
           </View>
         </View>
 
-        {/* NEWS IMPACT CARD */}
-        <View
-          style={[
-            styles.card,
-            {
-              backgroundColor: theme.surface,
-              borderColor: theme.cardBorder,
-            },
-          ]}
-        >
+        {/* NEWS IMPACT */}
+        <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
           <View style={styles.cardHeaderRow}>
-            <Text
-              style={[styles.cardTitle, { color: theme.textPrimary }]}
-            >
+            <Text style={[styles.cardTitle, { color: theme.textPrimary }]}>
               News impact on {displaySymbol ?? "this asset"}
             </Text>
-            <Text
-              style={[styles.cardSubtitle, { color: theme.textSoft }]}
-            >
+            <Text style={[styles.cardSubtitle, { color: theme.textSoft }]}>
               Super AI sentiment · impact score · time horizon
             </Text>
           </View>
 
           {!hasNewsImpact && (
-            <Text
-              style={[styles.emptyText, { color: theme.textSoft }]}
-            >
+            <Text style={[styles.emptyText, { color: theme.textSoft }]}>
               Super AI doesn&apos;t see any strong, focused news cluster on{" "}
-              {displaySymbol ?? "this asset"} right now. When a story directly
-              affects this asset, it will appear here with sentiment, impact and
-              horizon.
+              {displaySymbol ?? "this asset"} right now. When a story directly affects
+              this asset, it will appear here with sentiment, impact and horizon.
             </Text>
           )}
 
@@ -722,59 +503,28 @@ const AssetDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                 key={n.id}
                 style={[
                   styles.newsImpactCard,
-                  {
-                    borderColor: theme.cardBorder,
-                    backgroundColor: theme.surfaceAlt,
-                  },
+                  { borderColor: theme.cardBorder, backgroundColor: theme.surfaceAlt },
                 ]}
               >
-                <Text
-                  style={[
-                    styles.newsImpactTag,
-                    { color: badgeColor, borderColor: badgeColor },
-                  ]}
-                >
+                <Text style={[styles.newsImpactTag, { color: badgeColor, borderColor: badgeColor }]}>
                   {badgeText.toUpperCase()} • Impact {impactScore}/100
                 </Text>
 
-                <Text
-                  style={[
-                    styles.newsImpactTitle,
-                    { color: theme.textPrimary },
-                  ]}
-                  numberOfLines={2}
-                >
+                <Text style={[styles.newsImpactTitle, { color: theme.textPrimary }]} numberOfLines={2}>
                   {n.title}
                 </Text>
 
-                <Text
-                  style={[
-                    styles.newsImpactBody,
-                    { color: theme.textSoft },
-                  ]}
-                  numberOfLines={3}
-                >
+                <Text style={[styles.newsImpactBody, { color: theme.textSoft }]} numberOfLines={3}>
                   {n.aiComment && n.aiComment.trim().length > 0
                     ? n.aiComment
-                    : n.summary ||
-                      "AI is still parsing this story and its implications."}
+                    : n.summary || "AI is still parsing this story and its implications."}
                 </Text>
 
                 <View style={styles.newsImpactFooterRow}>
-                  <Text
-                    style={[
-                      styles.newsImpactFooterText,
-                      { color: theme.textSoft },
-                    ]}
-                  >
+                  <Text style={[styles.newsImpactFooterText, { color: theme.textSoft }]}>
                     Horizon: {horizonLabel(n.horizon)}
                   </Text>
-                  <Text
-                    style={[
-                      styles.newsImpactFooterText,
-                      { color: theme.textSoft },
-                    ]}
-                  >
+                  <Text style={[styles.newsImpactFooterText, { color: theme.textSoft }]}>
                     AI conf. {confidencePct}%
                   </Text>
                 </View>
@@ -784,50 +534,27 @@ const AssetDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         </View>
 
         {/* AI CTA */}
-        <View
-          style={[
-            styles.card,
-            {
-              backgroundColor: theme.surface,
-              borderColor: theme.cardBorder,
-            },
-          ]}
-        >
+        <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
           <View style={styles.cardHeaderRow}>
-            <Text
-              style={[styles.cardTitle, { color: theme.textPrimary }]}
-            >
+            <Text style={[styles.cardTitle, { color: theme.textPrimary }]}>
               Ask Tredia AI about {displaySymbol ?? "this asset"}
             </Text>
-            <Text
-              style={[styles.cardSubtitle, { color: theme.textSoft }]}
-            >
+            <Text style={[styles.cardSubtitle, { color: theme.textSoft }]}>
               Get structured, realistic analysis — no hype, no memes.
             </Text>
           </View>
 
-          <Text
-            style={[styles.aiHint, { color: theme.textSoft }]}
-          >
-            You&apos;re seeing live price, candles and news impact above.
-            {"\n"}
-            For real coaching, ask Tredia AI things like:
+          <Text style={[styles.aiHint, { color: theme.textSoft }]}>
+            You&apos;re seeing live price, candles and news impact above.{"\n"}
+            For real coaching, ask Tredia AI things like:{"\n"}•{" "}
+            {displaySymbol ? `“Is ${displaySymbol} too risky to hold right now?”` : "“Is this asset too risky to hold right now?”"}
             {"\n"}•{" "}
-            {displaySymbol
-              ? `“Is ${displaySymbol} too risky to hold right now?”`
-              : "“Is this asset too risky to hold right now?”"}
-            {"\n"}•{" "}
-            {displaySymbol
-              ? `“What&apos;s a sane position size for ${displaySymbol}?”`
-              : "“What&apos;s a sane position size for this asset?”"}
+            {displaySymbol ? `“What's a sane position size for ${displaySymbol}?”` : "“What's a sane position size for this asset?”"}
             {"\n"}• “Help me build a plan around this ticker.”
           </Text>
 
           <TouchableOpacity
-            style={[
-              styles.aiButton,
-              { backgroundColor: theme.accent },
-            ]}
+            style={[styles.aiButton, { backgroundColor: theme.accent }]}
             onPress={() =>
               navigation.navigate("HomeTabs", {
                 screen: "AI",
@@ -839,48 +566,26 @@ const AssetDetailScreen: React.FC<Props> = ({ route, navigation }) => {
               } as any)
             }
           >
-            <Text style={styles.aiButtonText}>
-              Open Tredia AI chat
-            </Text>
+            <Text style={styles.aiButtonText}>Open Tredia AI chat</Text>
           </TouchableOpacity>
         </View>
 
-        {/* TRADE CARD + BUTTON */}
-        <View
-          style={[
-            styles.card,
-            {
-              backgroundColor: theme.surface,
-              borderColor: theme.cardBorder,
-            },
-          ]}
-        >
+        {/* TRADE */}
+        <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
           <View style={styles.cardHeaderRow}>
-            <Text
-              style={[styles.cardTitle, { color: theme.textPrimary }]}
-            >
+            <Text style={[styles.cardTitle, { color: theme.textPrimary }]}>
               Trade {displaySymbol ?? "this asset"}
             </Text>
-            <Text
-              style={[styles.cardSubtitle, { color: theme.textSoft }]}
-            >
-              Simulate a position in your paper portfolio before
-              risking real money.
+            <Text style={[styles.cardSubtitle, { color: theme.textSoft }]}>
+              Simulate a position in your paper portfolio before risking real money.
             </Text>
           </View>
 
           <NeonButton
-            label={
-              displaySymbol ? `Trade ${displaySymbol}` : "Trade"
-            }
+            label={displaySymbol ? `Trade ${displaySymbol}` : "Trade"}
             onPress={() => {
-              if (displaySymbol) {
-                openTradeModal(displaySymbol);
-              } else {
-                console.log(
-                  "[AssetDetail] Tried to open trade modal without symbol"
-                );
-              }
+              if (displaySymbol) openTradeModal(displaySymbol);
+              else console.log("[AssetDetail] Tried to open trade modal without symbol");
             }}
             glowColor={theme.accent}
           />
@@ -901,14 +606,12 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 40,
   },
-
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
 
-  // BACK
   backRow: {
     flexDirection: "row",
     justifyContent: "flex-start",
@@ -925,7 +628,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
-  // HEADER
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -959,7 +661,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
 
-  // PRICE
   priceRow: {
     marginBottom: 10,
   },
@@ -981,7 +682,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
 
-  // GENERIC CARD
   card: {
     borderWidth: 1,
     borderRadius: 20,
@@ -1014,7 +714,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
 
-  // CHART
   sparklineWrapper: {
     marginTop: 10,
     marginBottom: 10,
@@ -1038,7 +737,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
-  // STATS
   statsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -1057,7 +755,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
-  // NEWS IMPACT
   newsImpactCard: {
     borderWidth: 1,
     borderRadius: 16,
@@ -1092,7 +789,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
 
-  // AI SECTION
   aiHint: {
     fontSize: 12,
     marginTop: 4,
@@ -1111,7 +807,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 
-  // ERROR
   errorText: {
     marginTop: 8,
     fontSize: 12,

@@ -1,10 +1,9 @@
-// src/services/alertsApi.ts
-import { API_BASE_URL } from "../config/api";
+import { api } from "./apiClient";
 
 class AlertsApi {
   async getAll() {
-    const res = await fetch(`${API_BASE_URL}/api/alerts/all`);
-    return await res.json();
+    const res = await api.get("/alerts/all");
+    return res.data;
   }
 }
 

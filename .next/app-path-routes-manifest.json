@@ -1,0 +1,19 @@
+{
+  "/(shell)/analytics/page": "/analytics",
+  "/(shell)/article/page": "/article",
+  "/(shell)/assistant/page": "/assistant",
+  "/(shell)/community/page": "/community",
+  "/(shell)/creators/page": "/creators",
+  "/(shell)/feed/page": "/feed",
+  "/(shell)/league/page": "/league",
+  "/(shell)/portfolio/page": "/portfolio",
+  "/(shell)/predictions/page": "/predictions",
+  "/(shell)/rewards/page": "/rewards",
+  "/(shell)/settings/page": "/settings",
+  "/(shell)/signals/page": "/signals",
+  "/(shell)/trends/page": "/trends",
+  "/_global-error/page": "/_global-error",
+  "/_not-found/page": "/_not-found",
+  "/favicon.ico/route": "/favicon.ico",
+  "/page": "/"
+}

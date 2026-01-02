@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useTheme } from "../context/ThemeContext";
-import { api } from "../services/api";
+import { api } from "../services/apiClient";
 
 type CommunityPost = {
   id: string;

@@ -1,11 +1,8 @@
-// src/services/paperService.ts
-import axios from "axios";
-import { API_BASE_URL } from "../config/api";
+import { api } from "./apiClient";
 
-// GET PORTFOLIO
 export async function getPortfolio() {
   try {
-    const res = await axios.get(`${API_BASE_URL}/paper/portfolio`);
+    const res = await api.get("/paper/portfolio");
     return res.data;
   } catch (err) {
     console.error("Portfolio fetch error:", err);
@@ -13,14 +10,13 @@ export async function getPortfolio() {
   }
 }
 
-// EXECUTE PAPER TRADE
 export async function executePaperTrade(
   symbol: string,
   amount: number,
   side: "BUY" | "SELL"
 ) {
   try {
-    const res = await axios.post(`${API_BASE_URL}/paper/trade`, {
+    const res = await api.post("/paper/trade", {
       symbol,
       amount,
       side,

@@ -1,95 +1,65 @@
-// src/components/AlertCard.tsx
 import React from "react";
-import { View, Text } from "react-native";
-import { styled } from "nativewind";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { useTheme } from "../context/ThemeContext";
 
-interface AlertCardProps {
-  alert: {
-    id?: string;
-    title: string;
-    description: string;
-    severity: "HIGH" | "MEDIUM" | "LOW";
-    timeAgo?: string;
-    source?: string;
-  };
-}
+export default function AlertCard(props: any) {
+  const theme: any = useTheme();
+  const {
+    title,
+    message,
+    subtitle,
+    onPress,
+    rightText,
+  } = props ?? {};
 
-const StyledView = styled(View);
-const StyledText = styled(Text);
-
-type SeverityStyle = {
-  border: string;
-  dot: string;
-  labelBg: string;
-  labelText: string;
-};
-
-const severityStyles: Record<AlertCardProps["alert"]["severity"], SeverityStyle> = {
-  HIGH: {
-    border: "border-loss/60",
-    dot: "bg-loss",
-    labelBg: "bg-loss/10",
-    labelText: "text-loss",
-  },
-  MEDIUM: {
-    border: "border-electricBlue/60",
-    dot: "bg-electricBlue",
-    labelBg: "bg-electricBlue/10",
-    labelText: "text-electricBlue",
-  },
-  LOW: {
-    border: "border-gray-600/60",
-    dot: "bg-gray-400",
-    labelBg: "bg-gray-500/10",
-    labelText: "text-gray-300",
-  },
-};
-
-const AlertCard: React.FC<AlertCardProps> = ({ alert }) => {
-  const styles = severityStyles[alert.severity];
+  const Container: any = onPress ? TouchableOpacity : View;
 
   return (
-    <StyledView
-      className={`mb-3 rounded-2xl border bg-cardBg px-4 py-3 flex-row ${styles.border}`}
+    <Container
+      onPress={onPress}
+      activeOpacity={0.9}
+      style={[
+        styles.card,
+        { backgroundColor: theme.surface, borderColor: theme.cardBorder },
+      ]}
     >
-      {/* Left dot */}
-      <StyledView className="mr-3 mt-1">
-        <StyledView className={`w-2 h-2 rounded-full ${styles.dot}`} />
-      </StyledView>
-
-      {/* Content */}
-      <StyledView className="flex-1">
-        {/* Severity pill */}
-        <StyledView
-          className={`self-start mb-1 px-2 py-0.5 rounded-full ${styles.labelBg}`}
-        >
-          <StyledText
-            className={`text-[10px] font-semibold tracking-wide ${styles.labelText}`}
-          >
-            {alert.severity}
-          </StyledText>
-        </StyledView>
-
-        {/* Title */}
-        <StyledText className="text-white text-sm font-semibold mb-1">
-          {alert.title}
-        </StyledText>
-
-        {/* Description */}
-        <StyledText className="text-gray-400 text-xs leading-5 mb-1">
-          {alert.description}
-        </StyledText>
-
-        {/* Meta */}
-        {(alert.timeAgo || alert.source) && (
-          <StyledText className="text-gray-500 text-[11px]">
-            {alert.source ? `${alert.source} • ` : ""}
-            {alert.timeAgo}
-          </StyledText>
+      <View style={{ flex: 1 }}>
+        {!!title && (
+          <Text style={[styles.title, { color: theme.textPrimary ?? theme.text }]}>
+            {title}
+          </Text>
         )}
-      </StyledView>
-    </StyledView>
-  );
-};
+        {!!subtitle && (
+          <Text style={[styles.subtitle, { color: theme.textSoft }]}>
+            {subtitle}
+          </Text>
+        )}
+        {!!message && (
+          <Text style={[styles.body, { color: theme.textSoft }]} numberOfLines={3}>
+            {message}
+          </Text>
+        )}
+      </View>
 
-export default AlertCard;
+      {!!rightText && (
+        <Text style={[styles.rightText, { color: theme.accent }]}>
+          {rightText}
+        </Text>
+      )}
+    </Container>
+  );
+}
+
+const styles = StyleSheet.create({
+  card: {
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 12,
+    flexDirection: "row",
+    gap: 12,
+  },
+  title: { fontSize: 14, fontWeight: "700" },
+  subtitle: { marginTop: 2, fontSize: 12 },
+  body: { marginTop: 6, fontSize: 12, lineHeight: 16 },
+  rightText: { fontSize: 12, fontWeight: "700" },
+});

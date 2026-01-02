@@ -1,6 +1,6 @@
-// src/context/AuthContext.tsx
 import React, { createContext, useContext, useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { setAuthToken } from "../services/apiClient";
 import { initPurchases } from "../services/subscriptionService";
 
 interface AuthContextType {
@@ -21,9 +21,7 @@ const AuthContext = createContext<AuthContextType>({
   logout: async () => {},
 });
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<any>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -33,20 +31,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const restore = async () => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
       const storedUser = await AsyncStorage.getItem("user");
       const storedToken = await AsyncStorage.getItem("token");
 
       if (storedUser && storedToken) {
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
+        setUser(JSON.parse(storedUser));
         setToken(storedToken);
+        setAuthToken(storedToken);
 
-        // Re-init RevenueCat with saved user id
         await initPurchases(
           process.env.EXPO_PUBLIC_REVENUECAT_KEY!,
-          String(parsedUser.id)
+          JSON.parse(storedUser).id.toString()
         );
       }
     } finally {
@@ -55,16 +52,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const login = async (newToken: string, userData: any) => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-
       setUser(userData);
       setToken(newToken);
-
+      setAuthToken(newToken);
       await AsyncStorage.setItem("user", JSON.stringify(userData));
       await AsyncStorage.setItem("token", newToken);
 
-      // RevenueCat init when user logs in / registers
       await initPurchases(
         process.env.EXPO_PUBLIC_REVENUECAT_KEY!,
         String(userData.id)
@@ -76,26 +71,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const refreshToken = async (newToken: string) => {
     setToken(newToken);
+    setAuthToken(newToken);
     await AsyncStorage.setItem("token", newToken);
   };
 
   const logout = async () => {
-    await AsyncStorage.removeItem("user");
-    await AsyncStorage.removeItem("token");
     setUser(null);
     setToken(null);
+    setAuthToken(null);
+    await AsyncStorage.removeItem("user");
+    await AsyncStorage.removeItem("token");
   };
 
   return (
     <AuthContext.Provider
-      value={{
-        user,
-        token,
-        isLoading,
-        login,
-        refreshToken,
-        logout,
-      }}
+      value={{ user, token, isLoading, login, refreshToken, logout }}
     >
       {children}
     </AuthContext.Provider>

@@ -1,68 +1,50 @@
-// src/theme.ts
-import { trediaTheme } from "../theme/trediaTheme";
+import React from "react";
+import { Modal, View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import { useTheme } from "../context/ThemeContext";
 
-export const theme = {
-  // Core
-  background: trediaTheme.colors.background,
-  bg: trediaTheme.colors.background,
+export default function ArticleModal(props: any) {
+  const theme: any = useTheme();
+  const { visible, onClose, article } = props ?? {};
 
-  surface: trediaTheme.colors.surface,
-  surfaceAlt: trediaTheme.colors.surfaceAlt,
-  surfaceGlass: trediaTheme.colors.surfaceGlass,
+  return (
+    <Modal visible={!!visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={styles.backdrop}>
+        <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
+          <View style={styles.headerRow}>
+            <Text style={[styles.title, { color: theme.textPrimary ?? theme.text }]} numberOfLines={2}>
+              {article?.title ?? "Article"}
+            </Text>
+            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+              <Text style={{ color: theme.textSoft }}>✕</Text>
+            </TouchableOpacity>
+          </View>
 
-  card: trediaTheme.colors.card,
-  cardSoft: trediaTheme.colors.cardSoft,
-  cardBorder: trediaTheme.colors.cardBorder,
-  borderGlass: trediaTheme.colors.borderGlass,
+          <ScrollView>
+            <Text style={[styles.body, { color: theme.textSoft }]}>
+              {article?.content ?? article?.summary ?? "No content."}
+            </Text>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+}
 
-  // Text
-  textPrimary: trediaTheme.colors.textPrimary,
-  textSoft: trediaTheme.colors.textSoft,
-  textMuted: trediaTheme.colors.textMuted,
-  heading: trediaTheme.colors.heading,
-
-  // Accents (NEW)
-  accentCyan: trediaTheme.colors.accentCyan,
-  accentAqua: trediaTheme.colors.accentAqua,
-  electricBlue: trediaTheme.colors.electricBlue,
-  gold: trediaTheme.colors.gold,
-
-  // Status
-  success: trediaTheme.colors.success,
-  danger: trediaTheme.colors.danger,
-
-  // Gradients
-  gradientPrimary: [
-    trediaTheme.colors.electricBlue,
-    trediaTheme.colors.accentAqua,
-  ],
-
-  gradientAmbient: [
-    "rgba(0,150,255,0.45)",
-    "rgba(0,150,255,0.0)",
-  ],
-
-  // Glow
-  glowStrong: trediaTheme.shadows.neon,
-  glowSoft: trediaTheme.shadows.neonSm,
-
-  // Radius
-  radius: {
-    card: trediaTheme.radius.card,
-    modal: trediaTheme.radius.modal,
-    button: trediaTheme.radius.button,
-    input: trediaTheme.radius.input,
+const styles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    backgroundColor: "rgba(3, 7, 18, 0.7)",
+    justifyContent: "center",
+    padding: 16,
   },
-
-  // Spacing
-  spacing: {
-    cardHorizontal: trediaTheme.spacing.cardHorizontal,
-    cardVertical: trediaTheme.spacing.cardVertical,
-    gridGap: trediaTheme.spacing.gridGap,
+  card: {
+    borderWidth: 1,
+    borderRadius: 20,
+    padding: 14,
+    maxHeight: "80%",
   },
-
-  // Charts
-  charts: { ...trediaTheme.charts },
-};
-
-export type AppTheme = typeof theme;
+  headerRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 10 },
+  title: { flex: 1, fontSize: 16, fontWeight: "800" },
+  closeBtn: { paddingHorizontal: 10, paddingVertical: 6 },
+  body: { fontSize: 12, lineHeight: 18 },
+});

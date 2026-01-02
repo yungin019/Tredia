@@ -1,7 +1,6 @@
 // src/services/aiTradeCoach.ts
 
-import axios from "axios";
-import { API_BASE_URL } from "../config";
+import { api } from "./apiClient";
 
 export type AiCoachResponse = {
   message: string;
@@ -11,7 +10,7 @@ export type AiCoachResponse = {
 
 export async function getAiTradeCoach(): Promise<AiCoachResponse> {
   try {
-    const res = await axios.get(`${API_BASE_URL}/ai/coach`);
+    const res = await api.get(`/ai/coach`);
 
     if (res.data) {
       return {

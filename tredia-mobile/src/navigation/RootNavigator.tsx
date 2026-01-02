@@ -1,3 +1,4 @@
+// src/navigation/RootNavigator.tsx
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
@@ -10,9 +11,7 @@ import SignInScreen from "../screens/SignInScreen";
 import RegisterScreen from "../screens/RegisterScreen";
 
 // Main tab navigator
-import HomeTabsNavigator, {
-  HomeTabsParamList,
-} from "./HomeTabsNavigator";
+import HomeTabsNavigator, { HomeTabsParamList } from "./HomeTabsNavigator";
 
 // Extra screens
 import AlertsScreen from "../screens/AlertsScreen";
@@ -20,6 +19,7 @@ import AssetDetailScreen from "../screens/AssetDetailScreen";
 import PaperTradeScreen from "../screens/PaperTradeScreen";
 import SubscriptionScreen from "../screens/SubscriptionScreen";
 import PaywallScreen from "../screens/PaywallScreen";
+import LinkBrokerScreen from "../screens/LinkBrokerScreen";
 
 // Re-export the main tabs param list
 export type MainTabParamList = HomeTabsParamList;
@@ -39,13 +39,21 @@ export type RootStackParamList = {
   Alerts: undefined;
 
   // ASSET DETAIL
-  AssetDetail: { symbol: string };
+  AssetDetail: {
+    symbol: string;
+    presetSide?: "BUY" | "SELL";
+    source?: string;
+    autoOpenTrade?: boolean;
+  };
 
   // PAPER TRADE
   PaperTrade: {
     symbol: string;
     assetType: string;
   };
+
+  // BROKER LINKING
+  LinkBroker: { brokerId?: string };
 
   // SUBSCRIPTIONS
   Subscription: undefined;
@@ -84,6 +92,9 @@ const RootNavigator: React.FC = () => {
 
       {/* ASSET DETAIL */}
       <Stack.Screen name="AssetDetail" component={AssetDetailScreen} />
+
+      {/* BROKER LINKING */}
+      <Stack.Screen name="LinkBroker" component={LinkBrokerScreen} />
 
       {/* PAPER TRADE */}
       <Stack.Screen

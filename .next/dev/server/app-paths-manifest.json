@@ -1,0 +1,4 @@
+{
+  "/(shell)/feed/page": "app/(shell)/feed/page.js",
+  "/page": "app/page.js"
+}

@@ -11,7 +11,7 @@ import {
   RefreshControl,
 } from "react-native";
 import { useTheme } from "../context/ThemeContext";
-import { api } from "../services/api";
+import { api } from "../services/apiClient";
 import TradeModal from "../components/TradeModal";
 import GlowView from "../components/GlowView";
 

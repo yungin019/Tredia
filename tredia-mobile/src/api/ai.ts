@@ -1,28 +1,57 @@
 // src/api/ai.ts
-import { api } from "./api";
+import { api } from "../services/apiClient";
 
-export type NewsInsightRequest = {
-  title: string;
-  summary?: string;
-  url?: string;
+/* ---------- Types for Super AI ---------- */
+
+export type Opportunity = {
+  symbol: string;
+  direction: "Bullish" | "Bearish" | "Neutral";
+  confidence: number; // 0–1
+  horizon: string;
+  rationale: string[];
+  risk_level: "Low" | "Medium" | "High";
 };
 
-/**
- * Generic assistant chat endpoint.
- * Calls POST /ai/ask with { prompt } and returns the AI reply text.
- */
-export async function askAssistant(prompt: string): Promise<string> {
-  const response = await api.post<{ reply: string }>("/ai/ask", { prompt });
-  return response.data.reply;
+export type RiskItem = {
+  symbol: string;
+  direction: "Bullish" | "Bearish" | "Neutral";
+  rationale: string[];
+};
+
+export type RelatedEvent = {
+  headline: string;
+  link: string;
+  relevance: "Low" | "Medium" | "High";
+  tags: string[];
+};
+
+export type MarketOutlook = {
+  bias_24h: "Bullish" | "Bearish" | "Neutral";
+  confidence: number; // 0–1
+};
+
+export type SuperAiResponse = {
+  summary: string;
+  market_outlook: MarketOutlook;
+  opportunities: Opportunity[];
+  risks: RiskItem[];
+  related_events: RelatedEvent[];
+};
+
+export type SuperAiRequest = {
+  question?: string;
+  portfolio?: any[];
+  watchlist?: any[];
+};
+
+/* ---------- AI helpers ---------- */
+
+export async function aiChat(message: string): Promise<string> {
+  const res = await api.post<{ reply: string }>("/ai/chat", { message });
+  return res.data.reply;
 }
 
-/**
- * News → AI insight endpoint.
- * Calls POST /ai/insight with { title, summary, url } and returns the insight text.
- */
-export async function getNewsInsight(
-  payload: NewsInsightRequest
-): Promise<string> {
-  const response = await api.post<{ insight: string }>("/ai/insight", payload);
-  return response.data.insight;
+export async function aiSuper(payload: SuperAiRequest): Promise<SuperAiResponse> {
+  const res = await api.post<SuperAiResponse>("/ai/super", payload);
+  return res.data;
 }

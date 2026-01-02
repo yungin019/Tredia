@@ -1,0 +1,19 @@
+{
+  "/(shell)/analytics/page": "app/(shell)/analytics/page.js",
+  "/(shell)/article/page": "app/(shell)/article/page.js",
+  "/(shell)/assistant/page": "app/(shell)/assistant/page.js",
+  "/(shell)/community/page": "app/(shell)/community/page.js",
+  "/(shell)/creators/page": "app/(shell)/creators/page.js",
+  "/(shell)/feed/page": "app/(shell)/feed/page.js",
+  "/(shell)/league/page": "app/(shell)/league/page.js",
+  "/(shell)/portfolio/page": "app/(shell)/portfolio/page.js",
+  "/(shell)/predictions/page": "app/(shell)/predictions/page.js",
+  "/(shell)/rewards/page": "app/(shell)/rewards/page.js",
+  "/(shell)/settings/page": "app/(shell)/settings/page.js",
+  "/(shell)/signals/page": "app/(shell)/signals/page.js",
+  "/(shell)/trends/page": "app/(shell)/trends/page.js",
+  "/_global-error/page": "app/_global-error/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/page": "app/page.js"
+}

@@ -1,6 +1,6 @@
 // src/services/paperTradeService.ts
 
-import api from "./api";
+import { api } from "./api";
 
 export type TradeSide = "buy" | "sell";
 export type OrderType = "market" | "limit";

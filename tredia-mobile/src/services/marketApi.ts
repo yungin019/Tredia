@@ -1,20 +1,19 @@
-// src/services/marketApi.ts
-import { API_BASE_URL } from "../config/api";
+import { api } from "./apiClient";
 
 class MarketApi {
   async getTrends() {
-    const res = await fetch(`${API_BASE_URL}/api/markets/trends`);
-    return await res.json();
+    const res = await api.get("/markets/trends");
+    return res.data;
   }
 
   async getInfo(symbol: string) {
-    const res = await fetch(`${API_BASE_URL}/api/markets/info/${symbol}`);
-    return await res.json();
+    const res = await api.get(`/markets/info/${symbol}`);
+    return res.data;
   }
 
   async getOHLC(symbol: string) {
-    const res = await fetch(`${API_BASE_URL}/api/ohlc/${symbol}`);
-    return await res.json();
+    const res = await api.get(`/ohlc/${symbol}`);
+    return res.data;
   }
 }
 

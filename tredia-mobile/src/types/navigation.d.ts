@@ -17,7 +17,12 @@ export type RootStackParamList = {
   Paywall: undefined;
 
   // Détails d’un asset (ETHUSDT, BTCUSDT, NVDA, etc.)
-  AssetDetail: { symbol: string };
+  AssetDetail: {
+  symbol: string;
+  presetSide?: "BUY" | "SELL";
+  source?: string;
+  autoOpenTrade?: boolean;
+};
 
   // Pour les accès directs depuis certains écrans
   PaperTrade: { symbol?: string };

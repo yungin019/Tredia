@@ -14,7 +14,7 @@ import { useNavigation } from "@react-navigation/native";
 
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
-import { api } from "../services/api";
+import { api } from "../services/apiClient";
 import GlowView from "../components/GlowView";
 import NeonButton from "../components/NeonButton";
 

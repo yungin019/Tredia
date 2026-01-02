@@ -1,9 +1,8 @@
 // src/services/feedApi.ts
 
-import axios from "axios";
-import { API_BASE_URL } from "../config";
+import { api } from "./apiClient";
 
 export async function getFeed() {
-  const res = await axios.get(`${API_BASE_URL}/feed`);
+  const res = await api.get("/feed");
   return res.data;
 }

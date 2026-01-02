@@ -1,15 +1,35 @@
-// src/services/brokerLinkService.ts
-import axios from "axios";
-import Constants from "expo-constants";
+import { Linking, Alert } from "react-native";
+const BROKER_DEEP_LINKS: Record<string, string> = {
+  etoro: "etoro://",
+  tradingview: "tradingview://",
+  binance: "binance://",
+  avanza: "avanza://",
+  trading212: "trading212://",
+  revolut: "revolut://",
+};
 
-const API_BASE_URL =
-  (Constants?.expoConfig?.extra as any)?.API_BASE_URL ||
-  process.env.EXPO_PUBLIC_API_URL ||
-  "http://localhost:4000";
-
-const client = axios.create({
-  baseURL: `${API_BASE_URL}`, // we already include /api in api.ts; here we call full /api paths
-});
+export async function openBrokerApp(broker: BrokerPlatform) {
+  // Try official deep link if known
+  const deepLink = broker.deepLinkPattern || BROKER_DEEP_LINKS[broker.slug];
+  if (deepLink) {
+    const canOpen = await Linking.canOpenURL(deepLink);
+    if (canOpen) {
+      await Linking.openURL(deepLink);
+      return true;
+    }
+  }
+  // Fallback to website
+  if (broker.websiteUrl) {
+    await Linking.openURL(broker.websiteUrl);
+    return true;
+  }
+  Alert.alert(
+    "Could not open broker",
+    "We couldn’t open the broker app or website for this platform."
+  );
+  return false;
+}
+import { api } from "./apiClient";
 
 export type BrokerPlatform = {
   id: number;
@@ -28,111 +48,36 @@ export type UserBrokerAccount = {
   brokerPlatformId: number;
   displayName: string | null;
   connectionStatus: "CONNECTED" | "DISCONNECTED";
-  createdAt: string;
-  updatedAt: string;
-  broker?: {
-    id: number;
-    name: string;
-    slug: string;
-    connectionType: string;
-    websiteUrl?: string | null;
-    deepLinkPattern?: string | null;
-    logoUrl?: string | null;
-    isEnabled: boolean;
-  } | null;
+  broker?: BrokerPlatform;
 };
 
-// -------- HELPERS --------
-
-function authHeaders(authToken: string | null | undefined) {
-  return authToken
-    ? {
-        Authorization: `Bearer ${authToken}`,
-      }
-    : undefined;
+export async function fetchAvailableBrokers() {
+  const res = await api.get("/brokers/platforms");
+  return res.data.platforms as BrokerPlatform[];
 }
 
-// -------- API CALLS --------
-
-// GET /api/brokers/platforms  → { platforms: [...] }
-export async function fetchAvailableBrokers(authToken: string | null) {
-  const res = await client.get("/api/brokers/platforms", {
-    headers: authHeaders(authToken),
-  });
-  return (res.data.platforms || []) as BrokerPlatform[];
+export async function fetchMyBroker() {
+  const res = await api.get("/brokers/me");
+  return res.data.account as UserBrokerAccount | null;
 }
 
-// GET /api/brokers/me → { account: {...} }
-export async function fetchMyBroker(authToken: string | null) {
-  const res = await client.get("/api/brokers/me", {
-    headers: authHeaders(authToken),
-  });
-  return (res.data.account || null) as UserBrokerAccount | null;
+export async function connectBroker(brokerSlug: string) {
+  const res = await api.post("/brokers/connect", { brokerSlug });
+  return res.data.account;
 }
 
-// POST /api/brokers/connect  body: { brokerSlug }
-export async function connectBroker(
-  authToken: string | null,
-  brokerSlug: string
-) {
-  const res = await client.post(
-    "/api/brokers/connect",
-    { brokerSlug },
-    {
-      headers: authHeaders(authToken),
+export async function getTradeDeeplink(symbol: string) {
+  try {
+    const res = await api.get("/brokers/deeplink", {
+      params: { symbol },
+    });
+    return res.data.url;
+  } catch (err: any) {
+    if (err?.response?.data?.error === "NO_BROKER_OR_LINK") {
+      const e = new Error("NO_BROKER_OR_LINK");
+      (e as any).code = "NO_BROKER_OR_LINK";
+      throw e;
     }
-  );
-
-  return (res.data.account || null) as UserBrokerAccount | null;
-}
-
-// POST /api/brokers/disconnect
-export async function disconnectBrokerApi(authToken: string | null) {
-  const res = await client.post(
-    "/api/brokers/disconnect",
-    {},
-    {
-      headers: authHeaders(authToken),
-    }
-  );
-  return res.data;
-}
-
-// GET /api/brokers/deeplink?symbol=TSLA → { url }
-export async function getTradeDeeplink(
-  authToken: string | null,
-  symbol: string
-) {
-  const res = await client.get("/api/brokers/deeplink", {
-    headers: authHeaders(authToken),
-    params: { symbol },
-  });
-  return res.data.url as string;
-}
-
-// OPTIONAL: GET /api/brokers/portfolio
-// useful later for a "Live from broker" tab in PortfolioScreen
-export type LiveBrokerPortfolio = {
-  provider: string;
-  connected: boolean;
-  baseCurrency: string;
-  cash: number;
-  startingCash: number;
-  positions: {
-    id: number;
-    symbol: string;
-    quantity: number;
-    avgPrice: number;
-    marketValue?: number;
-    unrealizedPnl?: number;
-  }[];
-};
-
-export async function fetchLivePortfolioFromBroker(
-  authToken: string | null
-): Promise<LiveBrokerPortfolio> {
-  const res = await client.get("/api/brokers/portfolio", {
-    headers: authHeaders(authToken),
-  });
-  return res.data as LiveBrokerPortfolio;
+    throw err;
+  }
 }

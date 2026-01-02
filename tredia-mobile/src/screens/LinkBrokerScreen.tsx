@@ -1,5 +1,5 @@
 // src/screens/LinkBrokerScreen.tsx
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -8,29 +8,34 @@ import {
   ScrollView,
   Linking,
   Alert,
+  ActivityIndicator,
+  Image,
 } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useTheme } from "../context/ThemeContext";
+import { useAuth } from "../context/AuthContext";
+import {
+  connectBroker,
+  fetchAvailableBrokers,
+  getTradeDeeplink,
+  openBrokerApp,
+  type BrokerPlatform,
+} from "../services/brokerLinkService";
+import i18n from "../config/i18n";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 
 type Props = NativeStackScreenProps<RootStackParamList, "LinkBroker">;
 
-type BrokerId = "etoro" | "binance" | "avanza";
-
-interface BrokerConfig {
-  id: BrokerId;
-  name: string;
+type BrokerUiCopy = {
   headline: string;
   description: string;
   bullets: string[];
-  deepLink: string;   // app scheme
-  storeLink: string;  // App Store / Play Store URL
-}
+  deepLink?: string;
+  storeLink?: string;
+};
 
-const BROKERS: BrokerConfig[] = [
-  {
-    id: "etoro",
-    name: "eToro",
+const BROKER_UI: Record<string, BrokerUiCopy> = {
+  etoro: {
     headline: "Social & multi-asset trading.",
     description:
       "You trade on eToro, Tredia sits on top and coaches your real decisions.",
@@ -43,9 +48,7 @@ const BROKERS: BrokerConfig[] = [
     storeLink:
       "https://apps.apple.com/app/etoro-invest-in-stocks-crypto/id674984916",
   },
-  {
-    id: "binance",
-    name: "Binance",
+  binance: {
     headline: "Crypto-first exchange for active traders.",
     description:
       "You execute on Binance, Tredia helps with structure, risk and discipline.",
@@ -58,9 +61,7 @@ const BROKERS: BrokerConfig[] = [
     storeLink:
       "https://apps.apple.com/app/binance-buy-bitcoin-securely/id1436799971",
   },
-  {
-    id: "avanza",
-    name: "Avanza",
+  avanza: {
     headline: "Nordic broker for stocks & funds.",
     description:
       "You trade on Avanza, Tredia gives you AI context around your Swedish and global holdings.",
@@ -72,42 +73,137 @@ const BROKERS: BrokerConfig[] = [
     deepLink: "avanza://",
     storeLink: "https://apps.apple.com/app/avanza-bank/id303598465",
   },
-];
+  trading212: {
+    headline: "Simple investing & trading.",
+    description:
+      "You execute on Trading 212, Tredia helps you plan entries, size risk, and stay consistent.",
+    bullets: ["Stocks & ETFs", "Easy mobile execution", "Great for beginners to intermediate"],
+    deepLink: "trading212://",
+  },
+  revolut: {
+    headline: "Trading inside your banking app.",
+    description:
+      "You trade on Revolut, Tredia helps you avoid emotional decisions and track your process.",
+    bullets: ["Stocks & crypto", "Fast access", "Good for casual investing"],
+    deepLink: "revolut://",
+  },
+};
+
+function getBrokerCopy(broker: BrokerPlatform): BrokerUiCopy {
+  const known = BROKER_UI[broker.slug];
+  if (known) return known;
+  return {
+    headline: `Trade on ${broker.name}.`,
+    description:
+      "Tredia doesn’t connect to broker accounts yet. This saves your preferred broker and helps you open the right app.",
+    bullets: ["Save your preferred broker", "Open the broker quickly", "Log your trades inside Tredia"],
+  };
+}
+
+
 
 const LinkBrokerScreen: React.FC<Props> = ({ navigation, route }) => {
   const theme: any = useTheme();
+  const { token } = useAuth();
 
-  // If the user came with params, pre-select the broker
-  const initialId =
-    (route.params?.brokerId as BrokerId | undefined) ?? "etoro";
-  const [selectedId, setSelectedId] = useState<BrokerId>(initialId);
+  const [brokers, setBrokers] = useState<BrokerPlatform[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [isOpening, setIsOpening] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [savedMessage, setSavedMessage] = useState<string | null>(null);
 
-  const selected = BROKERS.find((b) => b.id === selectedId) ?? BROKERS[0];
+  const initialSlug = (route.params as any)?.brokerId as string | undefined;
 
-  const handleContinue = async () => {
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setLoading(true);
+        const list = await fetchAvailableBrokers();
+        const enabled = (list ?? []).filter((b) => b.isEnabled !== false);
+        if (!mounted) return;
+        setBrokers(enabled);
+
+        const defaultSlug =
+          (initialSlug && enabled.find((b) => b.slug === initialSlug)?.slug) ||
+          enabled[0]?.slug ||
+          null;
+
+        setSelectedSlug(defaultSlug);
+      } catch (err) {
+        console.warn("[LinkBroker] failed to fetch brokers", err);
+        if (!mounted) return;
+        setBrokers([]);
+        setSelectedSlug(null);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [initialSlug]);
+
+  const selected = useMemo(() => {
+    if (!selectedSlug) return null;
+    return brokers.find((b) => b.slug === selectedSlug) ?? null;
+  }, [brokers, selectedSlug]);
+
+  const handleOpenBrokerApp = async () => {
+    if (!selected) return;
+
     try {
       setIsOpening(true);
 
-      const canOpen = await Linking.canOpenURL(selected.deepLink);
-
-      if (canOpen) {
-        await Linking.openURL(selected.deepLink);
-      } else {
-        await Linking.openURL(selected.storeLink);
+      if (token) {
+        try {
+          const url = await getTradeDeeplink("TSLA");
+          if (url) {
+            await Linking.openURL(url);
+            return;
+          }
+        } catch (err: any) {
+          if (err?.code === "NO_BROKER_OR_LINK") {
+            Alert.alert(i18n.t("broker.selectFirstTitle"), i18n.t("broker.selectFirstDesc"));
+            return;
+          }
+          console.warn("[LinkBroker] deeplink fetch error, falling back", err);
+        }
       }
 
-      // After the redirect, we just drop the user in the app
-      navigation.replace("HomeTabs");
+      await openBrokerApp(selected);
     } catch (err) {
       console.warn("[LinkBroker] open error", err);
       Alert.alert(
-        "Could not open broker",
-        "We had an issue opening the broker app. You can still continue into Tredia – add or change your broker later from Settings.",
+        i18n.t("broker.openErrorTitle"),
+        i18n.t("broker.openErrorDesc")
       );
-      navigation.replace("HomeTabs");
     } finally {
       setIsOpening(false);
+    }
+  };
+
+  const handleSaveBroker = async () => {
+    if (!selected) return;
+
+    if (!token) {
+      Alert.alert(i18n.t("broker.signInTitle"), i18n.t("broker.signInDesc"));
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      setSavedMessage(null);
+
+      await connectBroker(selected.slug);
+
+      setSavedMessage(i18n.t("broker.saved"));
+    } catch (err) {
+      console.error("[LinkBroker] save error", err);
+      Alert.alert(i18n.t("broker.saveErrorTitle"), i18n.t("broker.saveErrorDesc"));
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -120,159 +216,148 @@ const LinkBrokerScreen: React.FC<Props> = ({ navigation, route }) => {
       style={{ flex: 1, backgroundColor: theme.colors.background }}
       contentContainerStyle={styles.container}
     >
-      <Text style={[styles.kicker, { color: theme.colors.textSoft }]}>
-        CONNECT YOUR BROKER
+      <Text style={[styles.kicker, { color: theme.colors.textSoft }]}>{i18n.t("broker.kicker")}</Text>
+
+      <Text style={[styles.title, { color: theme.colors.textPrimary }]}> 
+        {i18n.t("broker.title")}
       </Text>
 
-      <Text style={[styles.title, { color: theme.colors.textPrimary }]}>
-        Where do you usually trade?
+      <Text style={[styles.subtitle, { color: theme.colors.textSoft }]}> 
+        {i18n.t("broker.subtitle")}
       </Text>
 
-      <Text style={[styles.subtitle, { color: theme.colors.textSoft }]}>
-        Tredia sits on top of your existing broker. Pick the platforms you
-        already use so the AI can guide you on real moves, not just theory.
-      </Text>
+      {loading ? (
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator />
+          <Text style={[styles.loadingText, { color: theme.colors.textSoft }]}> 
+            {i18n.t("broker.loading")}
+          </Text>
+        </View>
+      ) : brokers.length === 0 ? (
+        <View style={styles.loadingWrap}>
+          <Text style={[styles.loadingText, { color: theme.colors.textSoft }]}> 
+            {i18n.t("broker.none")}
+          </Text>
+        </View>
+      ) : (
+        brokers.map((broker) => {
+          const isSelected = broker.slug === selectedSlug;
+          const copy = getBrokerCopy(broker);
 
-      {BROKERS.map((broker) => {
-        const isSelected = broker.id === selectedId;
+          return (
+            <TouchableOpacity
+              key={broker.slug}
+              activeOpacity={0.9}
+              onPress={() => setSelectedSlug(broker.slug)}
+              style={[
+                styles.card,
+                {
+                  backgroundColor: theme.colors.surface,
+                  borderColor: isSelected ? theme.colors.accent : theme.colors.cardBorder,
+                },
+              ]}
+            >
+              <View style={styles.cardHeaderRow}>
+                <View style={styles.cardTitleRow}>
+                  {broker.logoUrl ? (
+                    <Image
+                      source={{ uri: broker.logoUrl }}
+                      style={styles.brokerLogo}
+                      resizeMode="contain"
+                    />
+                  ) : null}
 
-        return (
-          <TouchableOpacity
-            key={broker.id}
-            activeOpacity={0.9}
-            onPress={() => setSelectedId(broker.id)}
-            style={[
-              styles.card,
-              {
-                backgroundColor: theme.colors.surface,
-                borderColor: isSelected
-                  ? theme.colors.accent
-                  : theme.colors.cardBorder,
-              },
-            ]}
-          >
-            <View style={styles.cardHeaderRow}>
-              <Text
-                style={[
-                  styles.cardName,
-                  { color: theme.colors.textPrimary },
-                ]}
-              >
-                {broker.name}
-              </Text>
+                  <Text style={[styles.cardName, { color: theme.colors.textPrimary }]}>
+                    {broker.name}
+                  </Text>
+                </View>
 
-              <View
-                style={[
-                  styles.selectedPill,
-                  {
-                    backgroundColor: isSelected
-                      ? theme.colors.accent
-                      : "transparent",
-                    borderColor: theme.colors.accent,
-                  },
-                ]}
-              >
-                <Text
+                <View
                   style={[
-                    styles.selectedPillText,
+                    styles.selectedPill,
                     {
-                      color: isSelected
-                        ? theme.colors.background
-                        : theme.colors.accent,
+                      backgroundColor: isSelected ? theme.colors.accent : "transparent",
+                      borderColor: theme.colors.accent,
                     },
                   ]}
                 >
-                  {isSelected ? "Selected" : "Tap to select"}
-                </Text>
+                  <Text
+                    style={[
+                      styles.selectedPillText,
+                      { color: isSelected ? theme.colors.background : theme.colors.accent },
+                    ]}
+                  >
+                    {isSelected ? i18n.t("broker.selected") : i18n.t("broker.tapToSelect")}
+                  </Text>
+                </View>
               </View>
-            </View>
 
-            <Text
-              style={[
-                styles.cardHeadline,
-                { color: theme.colors.textPrimary },
-              ]}
-            >
-              {broker.headline}
-            </Text>
+              <Text style={[styles.cardHeadline, { color: theme.colors.textPrimary }]}>
+                {copy.headline}
+              </Text>
 
-            <Text
-              style={[
-                styles.cardDescription,
-                { color: theme.colors.textSoft },
-              ]}
-            >
-              {broker.description}
-            </Text>
+              <Text style={[styles.cardDescription, { color: theme.colors.textSoft }]}>
+                {copy.description}
+              </Text>
 
-            {broker.bullets.map((b) => (
-              <View key={b} style={styles.bulletRow}>
-                <Text
-                  style={[styles.bulletDot, { color: theme.colors.accent }]}
-                >
-                  •
-                </Text>
-                <Text
-                  style={[
-                    styles.bulletText,
-                    { color: theme.colors.textSoft },
-                  ]}
-                >
-                  {b}
-                </Text>
-              </View>
-            ))}
-          </TouchableOpacity>
-        );
-      })}
+              {copy.bullets.map((b) => (
+                <View key={b} style={styles.bulletRow}>
+                  <Text style={[styles.bulletDot, { color: theme.colors.accent }]}>•</Text>
+                  <Text style={[styles.bulletText, { color: theme.colors.textSoft }]}>
+                    {b}
+                  </Text>
+                </View>
+              ))}
+            </TouchableOpacity>
+          );
+        })
+      )}
 
       <View style={styles.footer}>
         <TouchableOpacity
           activeOpacity={0.9}
-          onPress={handleContinue}
-          disabled={isOpening}
+          onPress={handleSaveBroker}
+          disabled={isSaving || !selected}
           style={[
             styles.primaryButton,
-            {
-              backgroundColor: theme.colors.accent,
-              opacity: isOpening ? 0.6 : 1,
-            },
+            { backgroundColor: theme.colors.accent, opacity: isSaving || !selected ? 0.6 : 1 },
           ]}
         >
-          <Text
-            style={[
-              styles.primaryButtonText,
-              { color: theme.colors.background },
-            ]}
-          >
-            {isOpening
-              ? "Opening broker…"
-              : "Continue with selected broker"}
+          <Text style={[styles.primaryButtonText, { color: theme.colors.background }]}> 
+            {isSaving ? i18n.t("broker.saving") : i18n.t("broker.save")}
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           activeOpacity={0.9}
-          onPress={handleSkip}
+          onPress={handleOpenBrokerApp}
+          disabled={isOpening || !selected}
           style={[
             styles.secondaryButton,
-            { borderColor: theme.colors.cardBorder },
+            { borderColor: theme.colors.cardBorder, opacity: isOpening || !selected ? 0.6 : 1 },
           ]}
         >
-          <Text
-            style={[
-              styles.secondaryButtonText,
-              { color: theme.colors.textPrimary },
-            ]}
-          >
-            Skip for now – go to the app
+          <Text style={[styles.secondaryButtonText, { color: theme.colors.textPrimary }]}> 
+            {isOpening ? i18n.t("broker.opening") : i18n.t("broker.open")}
           </Text>
         </TouchableOpacity>
 
-        <Text
-          style={[styles.helperText, { color: theme.colors.textSoft }]}
+        {savedMessage ? (
+          <Text style={[styles.helperText, { color: theme.colors.accent }]}>{savedMessage}</Text>
+        ) : null}
+
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={handleSkip}
+          style={[styles.secondaryButton, { borderColor: theme.colors.cardBorder }]}
         >
-          You can add or change brokers later from Settings.
+          <Text style={[styles.secondaryButtonText, { color: theme.colors.textPrimary }]}> 
+            {i18n.t("broker.skip")}
+          </Text>
+        </TouchableOpacity>
+
+        <Text style={[styles.helperText, { color: theme.colors.textSoft }]}> 
+          {i18n.t("broker.later")}
         </Text>
       </View>
     </ScrollView>
@@ -302,6 +387,15 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: 20,
   },
+  loadingWrap: {
+    paddingVertical: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+  },
+  loadingText: {
+    fontSize: 13,
+  },
   card: {
     borderRadius: 22,
     borderWidth: 1,
@@ -313,6 +407,18 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 6,
+  },
+  cardTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    flex: 1,
+    paddingRight: 10,
+  },
+  brokerLogo: {
+    width: 28,
+    height: 28,
+    borderRadius: 7,
   },
   cardName: {
     fontSize: 18,
