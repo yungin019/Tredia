@@ -42,3 +42,5 @@ next-env.d.ts
 
 # logs
 dev_server.log
+tredia-api/
+tredia-clean/

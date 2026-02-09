@@ -2,22 +2,20 @@
 import React from "react";
 import { StatusBar } from "expo-status-bar";
 import { NavigationContainer } from "@react-navigation/native";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import AppNavigator from "./src/navigation/AppNavigator";
-import "./global.css";
 
-const queryClient = new QueryClient();
+import { ThemeProvider } from "./src/context/ThemeContext";
+import { AuthProvider } from "./src/context/AuthContext";
+import RootNavigator from "./src/navigation/RootNavigator";
 
 export default function App() {
   return (
-    <SafeAreaProvider>
-      <QueryClientProvider client={queryClient}>
+    <AuthProvider>
+      <ThemeProvider>
         <NavigationContainer>
-          <AppNavigator />
           <StatusBar style="light" />
+          <RootNavigator />
         </NavigationContainer>
-      </QueryClientProvider>
-    </SafeAreaProvider>
+      </ThemeProvider>
+    </AuthProvider>
   );
 }

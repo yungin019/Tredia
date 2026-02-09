@@ -3,7 +3,7 @@ import React from "react";
 import { View, Text, Pressable } from "react-native";
 import { styled } from "nativewind";
 import { MaterialIcons } from "@expo/vector-icons";
-import { trediaTheme } from "../design/trediaTheme";
+import { trediaTheme } from "../theme/trediaTheme";
 
 const StyledPressable = styled(Pressable);
 const StyledView = styled(View);

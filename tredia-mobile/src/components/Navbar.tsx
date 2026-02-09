@@ -1,25 +1,68 @@
 // src/components/Navbar.tsx
 import React from "react";
-import { Pressable, Text } from "react-native";
-import { styled } from "nativewind";
-import { MaterialIcons } from "@expo/vector-icons";
+import {
+  View,
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  Platform,
+} from "react-native";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
+import { MaterialIcons } from "@expo/vector-icons";
 
-const StyledPressable = styled(Pressable);
+import { useTheme } from "../context/ThemeContext";
 
-const Navbar: React.FC<BottomTabBarProps> = ({ state, descriptors, navigation }) => {
+const Navbar: React.FC<BottomTabBarProps> = ({
+  state,
+  descriptors,
+  navigation,
+}) => {
+  const { theme } = useTheme();
+
+  const bg = theme?.navbarBg || "#020617";
+  const border = theme?.border || "rgba(148, 163, 184, 0.3)";
+  const active = theme?.neonBlue || "#38bdf8";
+  const inactive = theme?.textSecondary || "#9CA3AF";
+
+  const iconForRoute = (name: string) => {
+    switch (name) {
+      case "Feed":
+        return "view-quilt";
+      case "Planet":
+        return "public";
+      case "Portfolio":
+        return "pie-chart";
+      case "Trends":
+        return "trending-up";
+      case "Profile":
+        return "person-outline";
+      default:
+        return "circle";
+    }
+  };
+
   return (
-    <StyledPressable className="flex-row justify-around items-center absolute bottom-0 left-0 right-0 mx-4 mb-4 p-2 rounded-full bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.10)]">
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: bg,
+          borderTopColor: border,
+        },
+      ]}
+    >
       {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
+
         const label =
-          options.tabBarLabel !== undefined
+          typeof options.tabBarLabel === "string"
             ? options.tabBarLabel
-            : options.title !== undefined
+            : typeof options.title === "string"
             ? options.title
             : route.name;
 
         const isFocused = state.index === index;
+        const iconName = iconForRoute(route.name);
 
         const onPress = () => {
           const event = navigation.emit({
@@ -29,43 +72,58 @@ const Navbar: React.FC<BottomTabBarProps> = ({ state, descriptors, navigation })
           });
 
           if (!isFocused && !event.defaultPrevented) {
-            navigation.navigate(route.name);
+            navigation.navigate(route.name as never);
           }
         };
 
-        const iconName =
-          label === "Feed"
-            ? "dashboard"
-            : label === "Trends"
-            ? "show-chart"
-            : label === "Portfolio"
-            ? "account-balance-wallet"
-            : "smart-toy";
-
         return (
-          <StyledPressable
+          <TouchableOpacity
             key={route.key}
+            accessibilityRole="button"
+            accessibilityState={isFocused ? { selected: true } : {}}
             onPress={onPress}
-            className="flex-col items-center p-2"
+            style={styles.tab}
+            activeOpacity={0.8}
           >
             <MaterialIcons
-              name={iconName}
-              size={24}
-              color={isFocused ? "#00B8FF" : "gray"}
+              name={iconName as any}
+              size={22}
+              color={isFocused ? active : inactive}
             />
             <Text
-              style={{
-                color: isFocused ? "#00B8FF" : "gray",
-                fontSize: 10,
-              }}
+              style={[
+                styles.label,
+                { color: isFocused ? active : inactive },
+              ]}
+              numberOfLines={1}
             >
               {label}
             </Text>
-          </StyledPressable>
+          </TouchableOpacity>
         );
       })}
-    </StyledPressable>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: Platform.OS === "ios" ? 20 : 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  tab: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 2,
+  },
+  label: {
+    fontSize: 11,
+    fontWeight: "500",
+  },
+});
 
 export default Navbar;

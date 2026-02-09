@@ -4,7 +4,7 @@ import { View, Text } from "react-native";
 import { styled } from "nativewind";
 import { MaterialIcons } from "@expo/vector-icons";
 import NeonButton from "../NeonButton";
-import { trediaTheme } from "../../design/trediaTheme";
+import { trediaTheme } from "../../theme/trediaTheme";
 
 const StyledView = styled(View);
 const StyledText = styled(Text);

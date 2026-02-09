@@ -1,26 +1,61 @@
 // src/components/Tooltip.tsx
-import React from "react";
-import { View, Text } from "react-native";
-import { styled } from "nativewind";
-import Animated, { FadeIn } from "react-native-reanimated";
-import GlassPanel from "./GlassPanel";
+import React, { useState } from "react";
+import { View, Text, Pressable, StyleSheet } from "react-native";
+import { useTheme } from "../context/ThemeContext";
 
-const AnimatedView = styled(Animated.createAnimatedComponent(View));
-
-interface TooltipProps {
-  title: string;
-  value: string;
-}
-
-const Tooltip: React.FC<TooltipProps> = ({ title, value }) => {
-  return (
-    <AnimatedView entering={FadeIn.duration(120)}>
-      <GlassPanel className="p-2 rounded-lg">
-        <Text className="text-xs text-gray-400">{title}</Text>
-        <Text className="text-sm font-bold text-white">{value}</Text>
-      </GlassPanel>
-    </AnimatedView>
-  );
+type TooltipProps = {
+  label: string;
+  children: React.ReactNode;
 };
 
-export default Tooltip;
+export default function Tooltip({ label, children }: TooltipProps) {
+  const [visible, setVisible] = useState(false);
+  const theme = useTheme();
+
+  return (
+    <View style={styles.container}>
+      <Pressable
+        onPressIn={() => setVisible(true)}
+        onPressOut={() => setVisible(false)}
+      >
+        {children}
+      </Pressable>
+
+      {visible && (
+        <View
+          style={[
+            styles.tooltip,
+            {
+              backgroundColor: theme.surface,
+              borderColor: theme.cardBorder,
+            },
+          ]}
+        >
+          <Text style={[styles.tooltipText, { color: theme.text }]}>
+            {label}
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    position: "relative",
+    alignSelf: "flex-start",
+  },
+  tooltip: {
+    position: "absolute",
+    bottom: "100%",
+    left: 0,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginBottom: 6,
+  },
+  tooltipText: {
+    fontSize: 12,
+  },
+});
